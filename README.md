@@ -14,37 +14,48 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 
 ## 🚀 Fonctionnalités
 
-### ✅ Phase 1 - Actuellement Implémenté
-- ✅ Structure du projet complète
-- ✅ Interface CLI avec argparse
-- ✅ Configuration YAML flexible
-- ✅ Système de gestion des modes d'analyse (quick/standard/deep)
+### ✅ Actuellement Implémenté (Phases 1-5)
+- ✅ **Structure du projet** : Architecture modulaire et extensible
+- ✅ **Interface CLI** : Commandes complètes avec argparse
+- ✅ **Configuration YAML** : Paramétrage flexible
+- ✅ **Modes d'analyse** : Quick / Standard / Deep
 - ✅ **Intégration VirusTotal** : Vérification de réputation via API
+- ✅ **Ingestion APK** : Extraction et validation complète
+- ✅ **Analyse du Manifeste** : Permissions, receivers, anomalies
+- ✅ **Détection d'obfuscation** : ProGuard, packers, entropie
+- ✅ **Analyse statique** : Strings, APIs, chargement dynamique
+- ✅ **Analyse de shellcode** : Désassemblage ARM/x86, patterns malveillants
+- ✅ **Système de scoring** : Score de menace intelligent (0-100)
 
 ### 🔄 En Développement
-- **Analyse Statique**
-  - Extraction et analyse du manifeste Android
-  - Détection des permissions dangereuses
-  - Analyse des strings suspectes
-  - Détection d'obfuscation (entropie, packers)
-  - Analyse des fichiers DEX et ressources
-
-- **Analyse de Shellcode**
-  - Extraction des bibliothèques natives (.so)
-  - Désassemblage ARM/x86
-  - Détection de patterns shellcode
-  - Émulation avec Unicorn Engine
-
 - **Analyse Comportementale (Dynamique)**
   - Instrumentation Frida
   - Hooking des API sensibles
   - Monitoring des appels système
   - Détection SSL Pinning
 
-- **Système de Scoring**
-  - Calcul du score de menace (0-100)
-  - Classification des menaces
-  - Génération de rapports HTML/JSON
+- **Émulation de Code**
+  - Unicorn Engine pour émulation sécurisée
+  - Détection d'auto-déchiffrement
+  - Analyse de comportement en sandbox
+
+- **Génération de Rapports**
+  - Rapports HTML interactifs
+  - Visualisations et graphes
+  - Export JSON/PDF
+  - Graphes d'appels
+
+### ✅ Détections Avancées Disponibles
+- 🔍 **15+ permissions dangereuses** (SMS, localisation, caméra, etc.)
+- 🔍 **10+ packers commerciaux** (UPX, Bangcle, Tencent, etc.)
+- 🔍 **20+ patterns suspects** (shell, root, crypto, etc.)
+- 🔍 **Combinaisons de permissions** suspectes
+- 🔍 **Chargement dynamique** de code (DexClassLoader, etc.)
+- 🔍 **Fichiers haute entropie** (chiffrés/compressés)
+- 🔍 **Syscalls dangereux** (execve, ptrace, etc.)
+- 🔍 **Patterns shellcode** (NOP sleds, egg hunters, etc.)
+- 🔍 **Désassemblage natif** ARM/ARM64/x86/x86-64
+- 🔍 **Réputation VirusTotal** (70+ moteurs AV)
 
 ## 📋 Prérequis
 
@@ -103,6 +114,7 @@ python src/androsleuth.py -a sample.apk -m standard
 ```bash
 python src/androsleuth.py -a sample.apk -m deep --frida
 ```
+**Inclut** : Tout ci-dessus + Émulation + Frida (à venir)
 
 ### Options Avancées
 ```bash
@@ -123,15 +135,17 @@ Shellcode_Forensic_Android/
 ├── src/
 │   ├── androsleuth.py          # Point d'entrée principal
 │   ├── modules/                 # Modules d'analyse
-│   │   ├── manifest_analyzer.py
-│   │   ├── static_analyzer.py
-│   │   ├── shellcode_detector.py
-│   │   ├── dynamic_analyzer.py
-│   │   └── report_generator.py
+│   │   ├── apk_ingestion.py         # ✅ Extraction APK
+│   │   ├── manifest_analyzer.py     # ✅ Analyse manifeste
+│   │   ├── obfuscation_detector.py  # ✅ Détection obfuscation
+│   │   ├── static_analyzer.py       # ✅ Analyse statique
+│   │   ├── shellcode_detector.py    # ✅ Analyse shellcode
+│   │   ├── virustotal_checker.py    # ✅ Vérification VirusTotal
+│   │   └── report_generator.py      # ⏳ Rapports (à venir)
 │   └── utils/                   # Utilitaires
-│       ├── logger.py
-│       ├── entropy.py
-│       └── helpers.py
+│       ├── logger.py                # Logger avec couleurs
+│       ├── entropy.py               # Calcul d'entropie
+│       └── helpers.py               # Fonctions utilitaires
 ├── config/
 │   └── config.yaml              # Configuration principale
 ├── reports/                     # Rapports générés
@@ -170,15 +184,16 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 
 - [x] Structure de base du projet
 - [x] Interface CLI
-- [ ] Module d'ingestion APK
-- [ ] Analyseur de manifeste
-- [ ] Détecteur d'obfuscation
-- [ ] Analyseur de code statique
-- [ ] Module d'analyse de shellcode
-- [ ] Émulation de code
+- [x] Module d'ingestion APK
+- [x] Analyseur de manifeste
+- [x] Détecteur d'obfuscation
+- [x] Analyseur de code statique
+- [x] Intégration VirusTotal
+- [x] **Module d'analyse de shellcode**
+- [x] Système de scoring
+- [ ] Module d'émulation (Unicorn Engine)
 - [ ] Instrumentation Frida
-- [ ] Système de scoring
-- [ ] Générateur de rapports
+- [ ] Générateur de rapports HTML
 
 ## 📄 Licence
 

@@ -202,6 +202,7 @@ Examples:
     from src.modules.obfuscation_detector import ObfuscationDetector
     from src.modules.static_analyzer import StaticAnalyzer
     from src.modules.virustotal_checker import VirusTotalChecker
+    from src.modules.shellcode_detector import ShellcodeDetector
     from src.utils.logger import setup_logger
     
     # Setup logger
@@ -291,6 +292,17 @@ Examples:
             static_summary = static_analyzer.get_summary()
             console.print(f"[bold green]✓ Static analysis complete - Threat Score: {static_summary['threat_score']:.1f}/100[/bold green]")
         
+        # Phase 5: Shellcode Detection
+        if not args.skip_shellcode and args.mode in ['standard', 'deep']:
+            console.print("\n[bold cyan]Phase 5: Native Code / Shellcode Analysis[/bold cyan]")
+            shellcode_detector = ShellcodeDetector(extracted_files)
+            shellcode_results = shellcode_detector.analyze()
+            shellcode_summary = shellcode_detector.get_summary()
+            console.print(f"[bold green]✓ Shellcode analysis complete - Threat Score: {shellcode_summary['threat_score']:.1f}/100[/bold green]")
+            
+            if shellcode_summary['suspicious_libraries'] > 0:
+                console.print(f"[bold yellow]⚠ Found {shellcode_summary['suspicious_libraries']} suspicious native libraries[/bold yellow]")
+        
         # Calculate overall threat score
         console.print("\n[bold cyan]═══ Analysis Summary ═══[/bold cyan]")
         
@@ -303,6 +315,8 @@ Examples:
             score_components.append(obf_summary['obfuscation_score'])
         if not args.skip_strings and args.mode in ['standard', 'deep']:
             score_components.append(static_summary['threat_score'])
+        if not args.skip_shellcode and args.mode in ['standard', 'deep']:
+            score_components.append(shellcode_summary['threat_score'])
         
         # Add VirusTotal score if available
         vt_score = vt_checker.get_reputation_score()

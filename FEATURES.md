@@ -2,8 +2,8 @@
 
 ## 📋 Vue d'ensemble
 
-**Version actuelle** : 1.0.0 (Phase 1-4 complétées)  
-**État** : Analyse statique complète fonctionnelle  
+**Version actuelle** : 1.0.0 (Phases 1-5 complétées)  
+**État** : Analyse statique + shellcode complète fonctionnelle  
 **Date** : 23 novembre 2025
 
 ---
@@ -122,7 +122,42 @@ results = ingestion.process()
 - ✅ Données communautaires de sécurité
 - ✅ Historique de scan et dates
 
-### 7. 🛠️ Utilitaires (`utils/`)
+### 7. � Analyse de Shellcode (`shellcode_detector.py`)
+- [x] Analyse des en-têtes ELF (32/64-bit, ARM/x86)
+- [x] Détection d'architecture (ARM, ARM64, x86, x86-64)
+- [x] Désassemblage avec Capstone (multi-architecture)
+- [x] Détection de syscalls dangereux :
+  - execve, system, fork, ptrace
+  - chmod, chown, mount, setuid
+  - socket, connect, bind
+- [x] Détection de patterns shellcode :
+  - NOP sleds (x86, ARM, ARM64)
+  - Egg hunters
+  - Self-modifying code
+  - Network syscalls
+- [x] Analyse d'entropie des sections
+- [x] Extraction et analyse de strings dans .so
+- [x] Détection d'instructions suspectes :
+  - Appels système (syscall, svc, int)
+  - Opérations cryptographiques (xor, ror, rol)
+  - Contrôle de flux inhabituel
+- [x] Classification par niveau de menace
+- [x] Score de menace pour code natif
+
+**Architectures supportées** :
+- ✅ ARM (32-bit)
+- ✅ ARM64 (64-bit)
+- ✅ x86 (32-bit)
+- ✅ x86-64 (64-bit)
+
+**Patterns détectés** :
+- 🔍 NOP sleds (exploits)
+- 🔍 Egg hunters
+- 🔍 Code auto-modifiant
+- 🔍 Reverse shells
+- 🔍 Syscalls malveillants
+
+### 8. �🛠️ Utilitaires (`utils/`)
 
 #### `entropy.py`
 - [x] Calcul d'entropie Shannon
@@ -176,6 +211,11 @@ Moyenne pondérée de :
    - HIGHLY_SUSPICIOUS : 75 pts
    - MALICIOUS : 100 pts
 
+5. **Score Shellcode** (max 100 points)
+   - Bibliothèques suspectes : 40 pts
+   - Patterns shellcode : 30 pts
+   - Syscalls dangereux : 30 pts
+
 ### Niveaux de Menace
 - **0-30** : ✅ SAFE
 - **31-50** : ⚠️ LOW
@@ -215,28 +255,25 @@ python src/androsleuth.py -a app.apk -m deep
 
 ## 📈 Statistiques du Code
 
-- **Lignes de code Python** : ~2800+
-- **Modules d'analyse** : 6
+- **Lignes de code Python** : ~3500+
+- **Modules d'analyse** : 7 (ingestion, manifeste, obfuscation, statique, shellcode, virustotal, + rapports à venir)
 - **Utilitaires** : 3
-- **Patterns suspects détectés** : 20+
+- **Patterns suspects détectés** : 30+
 - **Permissions surveillées** : 15+
 - **Packers reconnus** : 10+
 - **Moteurs antivirus** (via VT) : 70+
+- **Architectures supportées** : 4 (ARM, ARM64, x86, x86-64)
+- **Syscalls surveillés** : 12+
 
 ---
 
 ## ⏳ À Venir (Phases suivantes)
 
-### Phase 5 : Analyse de Shellcode
-- [ ] Désassemblage ARM/x86 avec Capstone
-- [ ] Détection de patterns shellcode
-- [ ] Analyse d'en-têtes ELF
-- [ ] Recherche de syscalls suspects
-
 ### Phase 6 : Émulation
 - [ ] Émulation avec Unicorn Engine
 - [ ] Détection d'auto-déchiffrement
 - [ ] Sandbox d'exécution
+- [ ] Analyse de comportement
 
 ### Phase 7 : Analyse Dynamique
 - [ ] Scripts Frida
