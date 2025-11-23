@@ -26,7 +26,7 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 - ✅ **Analyse statique** : Strings, APIs, chargement dynamique
 - ✅ **Analyse de shellcode** : Désassemblage ARM/x86, patterns malveillants
 - ✅ **Système de scoring** : Score de menace intelligent (0-100)
-- ✅ **Génération de Rapports** : HTML et JSON avec visualisations
+- ✅ **Génération de Rapports** : HTML, JSON et **PDF** avec visualisations
 - ✅ **Scan YARA** : Détection de malware avec règles personnalisées
 - ✅ **Émulation** : Unicorn Engine pour code auto-déchiffrant
 - ✅ **Instrumentation Frida** : Analyse dynamique en temps réel
@@ -182,14 +182,26 @@ poetry run androsleuth -a sample.apk --frida --duration 60
 poetry run androsleuth -a sample.apk -m deep --emulation --frida --duration 120 -o reports/full_analysis
 ```
 
+#### Génération de Rapports PDF
+```bash
+# Rapport PDF uniquement
+poetry run androsleuth -a sample.apk -m standard -f pdf -o reports/analysis
+
+# Tous les formats (HTML + JSON + PDF)
+poetry run androsleuth -a sample.apk -m deep -f both -o reports/complete
+```
+
 ### Options Avancées
 
 ```bash
 # Rapport JSON uniquement
 poetry run androsleuth -a sample.apk -f json -o reports/my_report
 
-# Analyse complète avec rapport HTML
-poetry run androsleuth -a sample.apk -m deep -o reports/malware_analysis
+# Rapport PDF professionnel
+poetry run androsleuth -a sample.apk -f pdf -o reports/professional
+
+# Analyse complète avec tous les formats
+poetry run androsleuth -a sample.apk -m deep -f both -o reports/malware_analysis
 
 # Mode verbose pour debugging
 poetry run androsleuth -a sample.apk -m deep -v
