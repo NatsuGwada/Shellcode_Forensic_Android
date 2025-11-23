@@ -14,7 +14,7 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 
 ## 🚀 Fonctionnalités
 
-### ✅ Actuellement Implémenté (Phases 1-7)
+### ✅ Actuellement Implémenté (Phases 1-9 - COMPLET!)
 - ✅ **Structure du projet** : Architecture modulaire et extensible
 - ✅ **Interface CLI** : Commandes complètes avec argparse
 - ✅ **Configuration YAML** : Paramétrage flexible
@@ -28,18 +28,11 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 - ✅ **Système de scoring** : Score de menace intelligent (0-100)
 - ✅ **Génération de Rapports** : HTML et JSON avec visualisations
 - ✅ **Scan YARA** : Détection de malware avec règles personnalisées
+- ✅ **Émulation** : Unicorn Engine pour code auto-déchiffrant
+- ✅ **Instrumentation Frida** : Analyse dynamique en temps réel
 
-### 🔄 En Développement
-- **Analyse Comportementale (Dynamique)**
-  - Instrumentation Frida
-  - Hooking des API sensibles
-  - Monitoring des appels système
-  - Détection SSL Pinning
-
-- **Émulation de Code**
-  - Unicorn Engine pour émulation sécurisée
-  - Détection d'auto-déchiffrement
-  - Analyse de comportement en sandbox
+### 🎉 Projet Complet!
+AndroSleuth est maintenant un outil d'analyse APK complet avec capacités d'analyse statique ET dynamique.
 
 ### ✅ Détections Avancées Disponibles
 - 🔍 **15+ permissions dangereuses** (SMS, localisation, caméra, etc.)
@@ -54,6 +47,10 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 - 🔍 **Réputation VirusTotal** (70+ moteurs AV)
 - 🔍 **13+ familles de malware** (trojans, spyware, ransomware, etc.)
 - 🔍 **Règles YARA personnalisées** pour détection comportementale
+- 🔍 **Code auto-déchiffrant** via émulation Unicorn
+- 🔍 **Hooking API en temps réel** avec Frida
+- 🔍 **Monitoring réseau** et fichiers
+- 🔍 **Détection SSL Pinning**
 
 ## 📋 Prérequis
 
@@ -122,6 +119,15 @@ python src/androsleuth.py -a sample.apk -f json -o reports/my_report
 # Analyse complète avec génération de rapports
 python src/androsleuth.py -a sample.apk -m deep -o reports/malware_analysis
 
+# Analyse avec émulation (détection auto-déchiffrement)
+python src/androsleuth.py -a sample.apk -m deep --emulation
+
+# Analyse dynamique avec Frida (nécessite un device)
+python src/androsleuth.py -a sample.apk --frida --duration 60
+
+# Analyse exhaustive (statique + dynamique)
+python src/androsleuth.py -a sample.apk -m deep --emulation --frida -o reports/full_analysis
+
 # Analyse verbose avec tous les modules
 python src/androsleuth.py -a sample.apk -v --all-modules
 
@@ -143,6 +149,8 @@ Shellcode_Forensic_Android/
 │   │   ├── shellcode_detector.py    # ✅ Analyse shellcode
 │   │   ├── virustotal_checker.py    # ✅ Vérification VirusTotal
 │   │   ├── yara_scanner.py          # ✅ Scan YARA
+│   │   ├── emulator.py              # ✅ Émulation Unicorn
+│   │   ├── frida_analyzer.py        # ✅ Analyse dynamique Frida
 │   │   └── report_generator.py      # ✅ Génération de rapports
 │   └── utils/                   # Utilitaires
 │       ├── logger.py                # Logger avec couleurs
@@ -150,7 +158,10 @@ Shellcode_Forensic_Android/
 │       └── helpers.py               # Fonctions utilitaires
 ├── yara_rules/                  # Règles YARA personnalisées
 │   ├── android_malware.yar          # Détection de malware
-│   └── android_packers.yar          # Détection de packers
+│   ├── android_packers.yar          # Détection de packers
+│   └── README.md
+├── frida_scripts/               # Scripts Frida pour hooking
+│   └── README.md
 ├── config/
 │   └── config.yaml              # Configuration principale
 ├── reports/                     # Rapports générés

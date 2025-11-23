@@ -166,8 +166,21 @@ Examples:
     )
     
     parser.add_argument(
+        '--emulation',
+        action='store_true',
+        help='Enable Unicorn emulation for self-decrypting code detection'
+    )
+    
+    parser.add_argument(
         '--device',
         help='Specify device ID for dynamic analysis'
+    )
+    
+    parser.add_argument(
+        '--duration',
+        type=int,
+        default=30,
+        help='Frida monitoring duration in seconds (default: 30)'
     )
     
     # Additional options
@@ -210,6 +223,8 @@ Examples:
     from src.modules.virustotal_checker import VirusTotalChecker
     from src.modules.shellcode_detector import ShellcodeDetector
     from src.modules.yara_scanner import YaraScanner
+    from src.modules.emulator import NativeEmulator
+    from src.modules.frida_analyzer import FridaAnalyzer
     from src.modules.report_generator import ReportGenerator
     from src.utils.logger import setup_logger
     
@@ -338,6 +353,51 @@ Examples:
             else:
                 console.print("[dim]✓ YARA scan skipped (not available or no rules)[/dim]")
         
+        # Phase 7: Emulation (if enabled and deep mode)
+        if args.emulation and args.mode == 'deep':
+            console.print("\n[bold cyan]Phase 7: Code Emulation Analysis[/bold cyan]")
+            emulator = NativeEmulator(extracted_files)
+            emulation_results = emulator.analyze()
+            emulation_summary = emulator.get_summary()
+            
+            if emulation_summary['unicorn_available']:
+                console.print(f"[bold green]✓ Emulation complete - Threat Score: {emulation_summary['threat_score']}/100[/bold green]")
+                
+                if emulation_summary['decryption_detected']:
+                    console.print("[bold red]⚠ Self-decrypting code detected![/bold red]")
+                if emulation_summary['self_modifying_code']:
+                    console.print("[bold red]⚠ Self-modifying code detected![/bold red]")
+                if emulation_summary['libraries_emulated'] > 0:
+                    console.print(f"[dim]  Analyzed {emulation_summary['libraries_emulated']} native libraries[/dim]")
+            else:
+                console.print("[dim]✓ Emulation skipped (Unicorn not installed)[/dim]")
+        
+        # Phase 8: Frida Dynamic Analysis (if enabled)
+        if args.frida:
+            console.print("\n[bold cyan]Phase 8: Dynamic Analysis (Frida)[/bold cyan]")
+            console.print("[yellow]⚠ This requires a connected Android device with frida-server running[/yellow]")
+            
+            frida_analyzer = FridaAnalyzer(metadata.get('package_name', 'unknown'), args.device)
+            frida_results = frida_analyzer.analyze(duration=args.duration)
+            frida_summary = frida_analyzer.get_summary()
+            
+            if frida_summary['frida_available']:
+                if frida_summary['hooks_installed']:
+                    console.print(f"[bold green]✓ Dynamic analysis complete - Threat Score: {frida_summary['threat_score']}/100[/bold green]")
+                    console.print(f"[dim]  API calls monitored: {frida_summary['total_api_calls']}[/dim]")
+                    console.print(f"[dim]  Network requests: {frida_summary['network_requests']}[/dim]")
+                    console.print(f"[dim]  File operations: {frida_summary['file_operations']}[/dim]")
+                    
+                    if frida_summary['suspicious_behaviors'] > 0:
+                        console.print(f"[bold red]⚠ Suspicious behaviors: {frida_summary['suspicious_behaviors']}[/bold red]")
+                else:
+                    console.print("[yellow]⚠ Could not attach to app - check device connection[/yellow]")
+                
+                # Cleanup
+                frida_analyzer.detach()
+            else:
+                console.print("[dim]✓ Frida analysis skipped (not installed)[/dim]")
+        
         # Calculate overall threat score
         console.print("\n[bold cyan]═══ Analysis Summary ═══[/bold cyan]")
         
@@ -355,6 +415,12 @@ Examples:
         if not args.skip_yara and args.mode in ['standard', 'deep']:
             if yara_summary.get('yara_available') and yara_summary.get('rules_loaded'):
                 score_components.append(yara_summary['threat_score'])
+        if args.emulation and args.mode == 'deep':
+            if emulation_summary.get('unicorn_available'):
+                score_components.append(emulation_summary['threat_score'])
+        if args.frida:
+            if frida_summary.get('frida_available') and frida_summary.get('hooks_installed'):
+                score_components.append(frida_summary['threat_score'])
         
         # Add VirusTotal score if available
         vt_score = vt_checker.get_reputation_score()
@@ -420,6 +486,14 @@ Examples:
             if not args.skip_yara and args.mode in ['standard', 'deep']:
                 if yara_summary.get('yara_available') and yara_summary.get('rules_loaded'):
                     report_gen.add_yara_results(yara_results)
+            
+            if args.emulation and args.mode == 'deep':
+                if emulation_summary.get('unicorn_available'):
+                    report_gen.add_emulation_results(emulation_results)
+            
+            if args.frida:
+                if frida_summary.get('frida_available') and frida_summary.get('hooks_installed'):
+                    report_gen.add_frida_results(frida_results)
             
             # Set overall score
             report_gen.set_overall_score(int(overall_score), risk_level)

@@ -41,6 +41,8 @@ class ReportGenerator:
             'virustotal_analysis': {},
             'shellcode_analysis': {},
             'yara_analysis': {},
+            'emulation_analysis': {},
+            'frida_analysis': {},
             'overall_score': 0,
             'risk_level': 'UNKNOWN',
             'timestamp': datetime.now().isoformat()
@@ -89,6 +91,18 @@ class ReportGenerator:
         """Add YARA scan results"""
         self.results['yara_analysis'] = results
         logger.debug("Added YARA analysis to report")
+    
+    
+    def add_emulation_results(self, results: Dict[str, Any]):
+        """Add emulation results"""
+        self.results['emulation_analysis'] = results
+        logger.debug("Added emulation analysis to report")
+    
+    
+    def add_frida_results(self, results: Dict[str, Any]):
+        """Add Frida dynamic analysis results"""
+        self.results['frida_analysis'] = results
+        logger.debug("Added Frida analysis to report")
     
     
     def set_overall_score(self, score: int, risk_level: str):
@@ -403,6 +417,8 @@ class ReportGenerator:
             {self._generate_virustotal_section()}
             {self._generate_shellcode_section()}
             {self._generate_yara_section()}
+            {self._generate_emulation_section()}
+            {self._generate_frida_section()}
             {self._generate_summary_section()}
         </div>
         
@@ -742,6 +758,110 @@ class ReportGenerator:
         """
     
     
+    def _generate_emulation_section(self) -> str:
+        """Generate emulation analysis section"""
+        emu = self.results.get('emulation_analysis', {})
+        
+        if not emu or not emu.get('unicorn_available'):
+            return ""
+        
+        ops_html = ""
+        ops = emu.get('suspicious_operations', [])
+        if ops:
+            ops_html = "<h3>⚠️ Suspicious Operations</h3>"
+            for op in ops[:10]:  # Limit to 10
+                severity_class = 'danger' if op.get('severity') in ['HIGH', 'CRITICAL'] else 'warning'
+                ops_html += f'''<div class="finding {severity_class}">
+                    <strong>{op.get("type", "Unknown")}</strong>
+                    <span class="badge {severity_class}">{op.get("severity", "MEDIUM")}</span>
+                    <br>
+                    <small>{op.get("description", "No description")}</small>
+                </div>'''
+        
+        return f"""
+        <div class="section">
+            <h2>🔬 Emulation Analysis</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Libraries Emulated</strong>
+                    {emu.get('libraries_emulated', 0)}
+                </div>
+                <div class="info-item">
+                    <strong>Decryption Detected</strong>
+                    {'✅ Yes' if emu.get('decryption_detected') else '❌ No'}
+                </div>
+                <div class="info-item">
+                    <strong>Self-Modifying Code</strong>
+                    {'✅ Yes' if emu.get('self_modifying_code') else '❌ No'}
+                </div>
+                <div class="info-item">
+                    <strong>Threat Score</strong>
+                    {emu.get('threat_score', 0)}/100
+                </div>
+            </div>
+            {ops_html}
+        </div>
+        """
+    
+    
+    def _generate_frida_section(self) -> str:
+        """Generate Frida dynamic analysis section"""
+        frida = self.results.get('frida_analysis', {})
+        
+        if not frida or not frida.get('frida_available'):
+            return ""
+        
+        behaviors_html = ""
+        behaviors = frida.get('suspicious_behavior', [])
+        if behaviors:
+            behaviors_html = "<h3>🚨 Suspicious Behaviors</h3>"
+            for behavior in behaviors[:15]:  # Limit to 15
+                severity = behavior.get('severity', 'MEDIUM')
+                severity_class = 'danger' if severity in ['HIGH', 'CRITICAL'] else 'warning'
+                api = behavior.get('api', 'Unknown')
+                
+                behaviors_html += f'''<div class="finding {severity_class}">
+                    <strong>{api}</strong>
+                    <span class="badge {severity_class}">{severity}</span>
+                    <br>
+                    <small>Type: {behavior.get("type", "unknown")}</small>
+                </div>'''
+        
+        network_html = ""
+        networks = frida.get('network_requests', [])[:10]  # First 10
+        if networks:
+            network_html = "<h3>🌐 Network Requests</h3><ul style='list-style: none; padding: 0;'>"
+            for req in networks:
+                network_html += f"<li style='padding: 5px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;'><strong>{req.get('method', 'GET')}</strong> {req.get('url', 'Unknown')}</li>"
+            network_html += "</ul>"
+        
+        return f"""
+        <div class="section">
+            <h2>📱 Dynamic Analysis (Frida)</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Hooks Installed</strong>
+                    {'✅ Yes' if frida.get('hooks_installed') else '❌ No'}
+                </div>
+                <div class="info-item">
+                    <strong>API Calls Monitored</strong>
+                    {len(frida.get('api_calls', []))}
+                </div>
+                <div class="info-item">
+                    <strong>Suspicious Behaviors</strong>
+                    {len(behaviors)}
+                </div>
+                <div class="info-item">
+                    <strong>Threat Score</strong>
+                    {frida.get('threat_score', 0)}/100
+                </div>
+            </div>
+            {behaviors_html}
+            {network_html}
+        </div>
+        """
+    
+    
     def _generate_summary_section(self) -> str:
         """Generate analysis summary section"""
         
@@ -759,6 +879,10 @@ class ReportGenerator:
             scores.append(('Shellcode', self.results['shellcode_analysis'].get('threat_score', 0)))
         if self.results.get('yara_analysis') and self.results['yara_analysis'].get('yara_available'):
             scores.append(('YARA', self.results['yara_analysis'].get('threat_score', 0)))
+        if self.results.get('emulation_analysis') and self.results['emulation_analysis'].get('unicorn_available'):
+            scores.append(('Emulation', self.results['emulation_analysis'].get('threat_score', 0)))
+        if self.results.get('frida_analysis') and self.results['frida_analysis'].get('frida_available'):
+            scores.append(('Frida', self.results['frida_analysis'].get('threat_score', 0)))
         
         scores_html = ""
         for module, score in scores:
