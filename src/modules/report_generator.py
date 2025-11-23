@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Report Generator Module
-Generate comprehensive HTML and JSON reports with visualizations
+Generate comprehensive HTML, JSON, and PDF reports with visualizations
 """
 
 import json
@@ -907,17 +907,46 @@ class ReportGenerator:
         """
     
     
-    def generate_reports(self) -> Dict[str, str]:
+    def generate_reports(self, formats: List[str] = None) -> Dict[str, str]:
         """
-        Generate both HTML and JSON reports
+        Generate reports in specified formats
+        
+        Args:
+            formats: List of formats to generate ('json', 'html', 'pdf', 'all')
+                    If None, generates json and html by default
         
         Returns:
             Dictionary with paths to generated reports
         """
-        json_path = self.generate_json_report()
-        html_path = self.generate_html_report()
+        if formats is None:
+            formats = ['json', 'html']
+        elif 'all' in formats:
+            formats = ['json', 'html', 'pdf']
         
-        return {
-            'json': json_path,
-            'html': html_path
-        }
+        reports = {}
+        
+        if 'json' in formats:
+            reports['json'] = self.generate_json_report()
+        
+        if 'html' in formats:
+            reports['html'] = self.generate_html_report()
+        
+        if 'pdf' in formats:
+            try:
+                from .pdf_generator import generate_pdf_report
+                
+                pdf_filename = f"{self.apk_name}_{self.timestamp}.pdf"
+                pdf_path = str(self.output_dir / pdf_filename)
+                
+                logger.info("Generating PDF report...")
+                pdf_path = generate_pdf_report(self.results, pdf_path)
+                reports['pdf'] = pdf_path
+                logger.info(f"PDF report generated: {pdf_path}")
+                
+            except ImportError as e:
+                logger.warning(f"PDF generation failed: {e}")
+                logger.warning("Install dependencies: pip install reportlab matplotlib pillow")
+            except Exception as e:
+                logger.error(f"PDF generation error: {e}")
+        
+        return reports

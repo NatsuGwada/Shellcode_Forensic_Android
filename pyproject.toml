@@ -60,6 +60,9 @@ pyyaml = ">=6.0.1"
 
 # Reporting
 jinja2 = ">=3.1.2"
+reportlab = ">=4.0.7"
+matplotlib = {version = ">=3.8.0", optional = true, python = ">=3.9"}
+pillow = ">=10.1.0"
 
 # Testing
 pytest = {version = ">=7.4.3", optional = true}
@@ -75,9 +78,10 @@ isort = "^5.13.2"
 
 [tool.poetry.extras]
 # Installation profiles
-full = ["capstone", "keystone-engine", "unicorn", "frida", "frida-tools"]
+full = ["capstone", "keystone-engine", "unicorn", "frida", "frida-tools", "matplotlib"]
 emulation = ["unicorn", "capstone", "keystone-engine"]
 dynamic = ["frida", "frida-tools"]
+pdf = ["matplotlib"]
 dev = ["pytest", "pytest-cov"]
 
 [tool.poetry.scripts]

@@ -116,9 +116,9 @@ Examples:
     
     parser.add_argument(
         '-f', '--format',
-        choices=['json', 'html', 'both'],
-        default='both',
-        help='Report format (default: both)'
+        choices=['json', 'html', 'pdf', 'all'],
+        default='all',
+        help='Report format: json, html, pdf, or all (default: all)'
     )
     
     # Analysis modules
@@ -500,9 +500,20 @@ Examples:
             
             # Generate reports
             try:
-                report_paths = report_gen.generate_reports()
-                console.print(f"[bold green]✓ JSON report generated:[/bold green] {report_paths['json']}")
-                console.print(f"[bold green]✓ HTML report generated:[/bold green] {report_paths['html']}")
+                # Determine formats to generate
+                formats = []
+                if args.format == 'all':
+                    formats = ['json', 'html', 'pdf']
+                elif args.format == 'both':  # Legacy support
+                    formats = ['json', 'html']
+                else:
+                    formats = [args.format]
+                
+                report_paths = report_gen.generate_reports(formats=formats)
+                
+                for format_type, path in report_paths.items():
+                    console.print(f"[bold green]✓ {format_type.upper()} report generated:[/bold green] {path}")
+                    
             except Exception as e:
                 console.print(f"[bold red]✗ Report generation failed:[/bold red] {str(e)}")
                 if args.verbose:
