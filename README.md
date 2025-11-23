@@ -30,9 +30,16 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 - ✅ **Scan YARA** : Détection de malware avec règles personnalisées
 - ✅ **Émulation** : Unicorn Engine pour code auto-déchiffrant
 - ✅ **Instrumentation Frida** : Analyse dynamique en temps réel
+- ✅ **Docker** : Container isolé et sécurisé pour analyse de malware
+- ✅ **Poetry** : Gestion moderne des dépendances
 
 ### 🎉 Projet Complet!
-AndroSleuth est maintenant un outil d'analyse APK complet avec capacités d'analyse statique ET dynamique.
+AndroSleuth est maintenant un outil d'analyse APK complet avec :
+- **Analyse Statique** : Manifeste, obfuscation, strings, shellcode, YARA
+- **Analyse Dynamique** : Émulation Unicorn + Instrumentation Frida
+- **Rapports Professionnels** : HTML, JSON, PDF avec code couleur
+- **Environnement Isolé** : Container Docker sécurisé
+- **Gestion Moderne** : Poetry pour dépendances reproductibles
 
 ### ✅ Détections Avancées Disponibles
 - 🔍 **15+ permissions dangereuses** (SMS, localisation, caméra, etc.)
@@ -48,9 +55,10 @@ AndroSleuth est maintenant un outil d'analyse APK complet avec capacités d'anal
 - 🔍 **13+ familles de malware** (trojans, spyware, ransomware, etc.)
 - 🔍 **Règles YARA personnalisées** pour détection comportementale
 - 🔍 **Code auto-déchiffrant** via émulation Unicorn
-- 🔍 **Hooking API en temps réel** avec Frida
-- 🔍 **Monitoring réseau** et fichiers
-- 🔍 **Détection SSL Pinning**
+- 🔍 **Hooking API en temps réel** avec Frida (10+ catégories)
+- 🔍 **Monitoring réseau** et fichiers pendant exécution
+- 🔍 **Détection SSL Pinning** et bypass
+- 🔍 **Génération PDF** avec graphiques et code couleur
 
 ## 📋 Prérequis
 
