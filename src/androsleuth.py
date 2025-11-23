@@ -203,6 +203,7 @@ Examples:
     from src.modules.static_analyzer import StaticAnalyzer
     from src.modules.virustotal_checker import VirusTotalChecker
     from src.modules.shellcode_detector import ShellcodeDetector
+    from src.modules.report_generator import ReportGenerator
     from src.utils.logger import setup_logger
     
     # Setup logger
@@ -341,6 +342,57 @@ Examples:
         
         console.print(f"\n[bold]Overall Threat Score:[/bold] {overall_score:.1f}/100")
         console.print(f"[bold]Threat Level:[/bold] {threat_level}")
+        
+        # Generate Reports (if requested)
+        if args.output:
+            console.print("\n[bold cyan]Phase 6: Report Generation[/bold cyan]")
+            
+            # Get risk level without formatting
+            if overall_score >= 86:
+                risk_level = "CRITICAL"
+            elif overall_score >= 71:
+                risk_level = "HIGH"
+            elif overall_score >= 51:
+                risk_level = "MEDIUM"
+            elif overall_score >= 31:
+                risk_level = "LOW"
+            else:
+                risk_level = "CLEAN"
+            
+            # Initialize report generator
+            report_gen = ReportGenerator(args.apk, args.output)
+            
+            # Add all results
+            report_gen.add_apk_info(metadata)
+            
+            if not args.skip_manifest:
+                report_gen.add_manifest_results(manifest_results)
+            
+            if not args.skip_obfuscation and args.mode in ['standard', 'deep']:
+                report_gen.add_obfuscation_results(obf_results)
+            
+            if not args.skip_strings and args.mode in ['standard', 'deep']:
+                report_gen.add_static_analysis_results(static_results)
+            
+            if vt_summary.get('available'):
+                report_gen.add_virustotal_results(vt_results)
+            
+            if not args.skip_shellcode and args.mode in ['standard', 'deep']:
+                report_gen.add_shellcode_results(shellcode_results)
+            
+            # Set overall score
+            report_gen.set_overall_score(int(overall_score), risk_level)
+            
+            # Generate reports
+            try:
+                report_paths = report_gen.generate_reports()
+                console.print(f"[bold green]✓ JSON report generated:[/bold green] {report_paths['json']}")
+                console.print(f"[bold green]✓ HTML report generated:[/bold green] {report_paths['html']}")
+            except Exception as e:
+                console.print(f"[bold red]✗ Report generation failed:[/bold red] {str(e)}")
+                if args.verbose:
+                    import traceback
+                    traceback.print_exc()
         
         # Cleanup
         if not args.no_cleanup:

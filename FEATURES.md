@@ -157,7 +157,44 @@ results = ingestion.process()
 - 🔍 Reverse shells
 - 🔍 Syscalls malveillants
 
-### 8. �🛠️ Utilitaires (`utils/`)
+---
+
+### 7. 📝 Génération de Rapports (`report_generator.py`)
+
+#### Rapports HTML Interactifs
+- [x] Design moderne avec gradients et animations CSS
+- [x] Score global visualisé avec couleur selon risque
+- [x] Sections organisées pour chaque module d'analyse
+- [x] Badges colorés pour permissions et détections
+- [x] Barres de progression pour scores individuels
+- [x] Responsive design (mobile/desktop)
+- [x] Code highlighting pour hash et données techniques
+
+#### Rapports JSON Structurés
+- [x] Format structuré pour parsing automatisé
+- [x] Timestamp et métadonnées complètes
+- [x] Résultats de tous les modules
+- [x] Scores individuels et global
+- [x] Compatible avec outils d'analyse tiers
+
+#### Fonctionnalités des Rapports
+- [x] Génération automatique avec nom unique (timestamp)
+- [x] Sauvegarde dans répertoire configurable
+- [x] Agrégation de tous les résultats d'analyse
+- [x] Classification de risque (CLEAN to CRITICAL)
+- [x] Section summary avec vue d'ensemble
+- [x] Liens vers ressources externes (GitHub, VT)
+
+#### Visualisations
+- [x] Score global avec code couleur (vert → rouge)
+- [x] Grilles d'information organisées
+- [x] Listes de détections avec niveaux de sévérité
+- [x] Badges pour catégorisation rapide
+- [x] Layout moderne et professionnel
+
+---
+
+### 8. �️ Utilitaires (`utils/`)
 
 #### `entropy.py`
 - [x] Calcul d'entropie Shannon
@@ -255,8 +292,8 @@ python src/androsleuth.py -a app.apk -m deep
 
 ## 📈 Statistiques du Code
 
-- **Lignes de code Python** : ~3500+
-- **Modules d'analyse** : 7 (ingestion, manifeste, obfuscation, statique, shellcode, virustotal, + rapports à venir)
+- **Lignes de code Python** : ~4500+
+- **Modules d'analyse** : 8 (ingestion, manifeste, obfuscation, statique, shellcode, virustotal, reports)
 - **Utilitaires** : 3
 - **Patterns suspects détectés** : 30+
 - **Permissions surveillées** : 15+
@@ -264,28 +301,29 @@ python src/androsleuth.py -a app.apk -m deep
 - **Moteurs antivirus** (via VT) : 70+
 - **Architectures supportées** : 4 (ARM, ARM64, x86, x86-64)
 - **Syscalls surveillés** : 12+
+- **Formats de rapport** : 2 (HTML, JSON)
 
 ---
 
 ## ⏳ À Venir (Phases suivantes)
 
-### Phase 6 : Émulation
+### Phase 7 : Émulation
 - [ ] Émulation avec Unicorn Engine
 - [ ] Détection d'auto-déchiffrement
 - [ ] Sandbox d'exécution
 - [ ] Analyse de comportement
 
-### Phase 7 : Analyse Dynamique
+### Phase 8 : Analyse Dynamique
 - [ ] Scripts Frida
 - [ ] Hooking d'API
 - [ ] Monitoring réseau
 - [ ] Détection SSL Pinning
 
-### Phase 8 : Reporting
-- [ ] Génération de rapports HTML
-- [ ] Graphes d'appels
-- [ ] Visualisations
-- [ ] Export JSON/PDF
+### Phase 9 : Améliorations Reporting
+- [ ] Graphes d'appels interactifs
+- [ ] Visualisations avancées avec Plotly
+- [ ] Export PDF
+- [ ] Comparaison entre versions d'APK
 
 ---
 

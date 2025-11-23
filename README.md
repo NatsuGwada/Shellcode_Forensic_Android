@@ -14,7 +14,7 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 
 ## 🚀 Fonctionnalités
 
-### ✅ Actuellement Implémenté (Phases 1-5)
+### ✅ Actuellement Implémenté (Phases 1-6)
 - ✅ **Structure du projet** : Architecture modulaire et extensible
 - ✅ **Interface CLI** : Commandes complètes avec argparse
 - ✅ **Configuration YAML** : Paramétrage flexible
@@ -26,6 +26,7 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 - ✅ **Analyse statique** : Strings, APIs, chargement dynamique
 - ✅ **Analyse de shellcode** : Désassemblage ARM/x86, patterns malveillants
 - ✅ **Système de scoring** : Score de menace intelligent (0-100)
+- ✅ **Génération de Rapports** : HTML et JSON avec visualisations
 
 ### 🔄 En Développement
 - **Analyse Comportementale (Dynamique)**
@@ -38,12 +39,6 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
   - Unicorn Engine pour émulation sécurisée
   - Détection d'auto-déchiffrement
   - Analyse de comportement en sandbox
-
-- **Génération de Rapports**
-  - Rapports HTML interactifs
-  - Visualisations et graphes
-  - Export JSON/PDF
-  - Graphes d'appels
 
 ### ✅ Détections Avancées Disponibles
 - 🔍 **15+ permissions dangereuses** (SMS, localisation, caméra, etc.)
@@ -121,6 +116,9 @@ python src/androsleuth.py -a sample.apk -m deep --frida
 # Générer uniquement un rapport JSON
 python src/androsleuth.py -a sample.apk -f json -o reports/my_report
 
+# Analyse complète avec génération de rapports
+python src/androsleuth.py -a sample.apk -m deep -o reports/malware_analysis
+
 # Analyse verbose avec tous les modules
 python src/androsleuth.py -a sample.apk -v --all-modules
 
@@ -141,7 +139,7 @@ Shellcode_Forensic_Android/
 │   │   ├── static_analyzer.py       # ✅ Analyse statique
 │   │   ├── shellcode_detector.py    # ✅ Analyse shellcode
 │   │   ├── virustotal_checker.py    # ✅ Vérification VirusTotal
-│   │   └── report_generator.py      # ⏳ Rapports (à venir)
+│   │   └── report_generator.py      # ✅ Génération de rapports
 │   └── utils/                   # Utilitaires
 │       ├── logger.py                # Logger avec couleurs
 │       ├── entropy.py               # Calcul d'entropie
