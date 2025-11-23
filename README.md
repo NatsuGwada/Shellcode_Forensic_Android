@@ -55,84 +55,184 @@ AndroSleuth est maintenant un outil d'analyse APK complet avec capacités d'anal
 ## 📋 Prérequis
 
 - Python 3.8+
-- pip
+- Poetry (gestionnaire de dépendances moderne) ou pip
 - Outils optionnels pour analyse avancée :
-  - Radare2 / Ghidra
-  - Frida (pour analyse dynamique)
+  - Radare2 / Ghidra (analyse binaire avancée)
+  - Frida (pour analyse dynamique en temps réel)
   - Émulateur Android / Device Android (pour tests dynamiques)
+  - frida-server sur le device Android (pour instrumentation)
 
 ## 🛠️ Installation
 
-1. Cloner le repository :
+### Option 1 : Installation avec Poetry (Recommandé) 🚀
+
+**Poetry** offre une gestion de dépendances moderne avec résolution automatique des conflits et environnements isolés.
+
 ```bash
+# 1. Cloner le repository
 git clone https://github.com/NatsuGwada/Shellcode_Forensic_Android.git
 cd Shellcode_Forensic_Android
+
+# 2. Lancer l'installation interactive
+./install_poetry.sh
 ```
 
-2. Créer un environnement virtuel :
+Le script installera automatiquement Poetry si nécessaire et vous proposera 4 profils :
+
+- **Basic** : Core uniquement (Androguard, YARA)
+- **Standard** : + Désassemblage (Capstone) + Émulation (Unicorn)
+- **Full** : Toutes les fonctionnalités (+ Frida) ⭐ **Recommandé**
+- **Developer** : Full + outils de développement (pytest, black, mypy)
+
+### Option 2 : Installation manuelle avec pip
+
 ```bash
+# 1. Cloner le repository
+git clone https://github.com/NatsuGwada/Shellcode_Forensic_Android.git
+cd Shellcode_Forensic_Android
+
+# 2. Créer un environnement virtuel
 python3 -m venv venv
 source venv/bin/activate  # Linux/Mac
 # ou
 venv\Scripts\activate  # Windows
-```
 
-3. Installer les dépendances :
-```bash
+# 3. Installer les dépendances
 pip install -r requirements.txt
 ```
 
-4. (Optionnel) Configurer l'API VirusTotal :
+### Configuration de VirusTotal (Optionnel)
+
+Pour activer la vérification de réputation :
+
 ```bash
-# Créer le fichier de configuration
+# Copier le template de configuration
 cp config/secrets.yaml.example config/secrets.yaml
 
 # Éditer et ajouter votre clé API
-nano config/secrets.yaml
+nano config/secrets.yaml  # ou vim/code
 ```
 
-Obtenez une clé API gratuite sur [VirusTotal](https://www.virustotal.com/gui/join-us)
+**Obtenir une clé API gratuite** : [VirusTotal API](https://www.virustotal.com/gui/join-us)
+
+### Configuration de Frida (Pour analyse dynamique)
+
+```bash
+# 1. Télécharger frida-server pour votre architecture Android
+# Depuis : https://github.com/frida/frida/releases
+
+# 2. Pousser sur le device
+adb push frida-server /data/local/tmp/
+
+# 3. Rendre exécutable
+adb shell "chmod 755 /data/local/tmp/frida-server"
+
+# 4. Lancer le serveur
+adb shell "/data/local/tmp/frida-server &"
+```
 
 ## 📖 Utilisation
 
-### Analyse Rapide (Statique uniquement)
+### Avec Poetry (Recommandé)
+
 ```bash
+# Activer l'environnement Poetry
+poetry shell
+
+# Ou exécuter directement avec 'poetry run'
+poetry run androsleuth -a sample.apk -m quick
+```
+
+### Exemples d'Analyse
+
+#### Analyse Rapide (Statique uniquement)
+```bash
+# Avec Poetry
+poetry run androsleuth -a sample.apk -m quick
+
+# Avec pip/venv
 python src/androsleuth.py -a sample.apk -m quick
 ```
 
-### Analyse Standard (Statique + Shellcode)
+#### Analyse Standard (Statique + Shellcode + YARA)
 ```bash
-python src/androsleuth.py -a sample.apk -m standard
+poetry run androsleuth -a sample.apk -m standard
 ```
 
-### Analyse Approfondie (Tout + Dynamique)
+#### Analyse Approfondie (Tout + VirusTotal)
 ```bash
-python src/androsleuth.py -a sample.apk -m deep --frida
+poetry run androsleuth -a sample.apk -m deep
 ```
-**Inclut** : Tout ci-dessus + Émulation + Frida (à venir)
+**Inclut** : Manifeste, Obfuscation, Statique, Shellcode, YARA, VirusTotal
+
+#### Analyse avec Émulation (Détection auto-déchiffrement)
+```bash
+poetry run androsleuth -a sample.apk -m deep --emulation
+```
+**Détecte** : Code auto-modifiant, déchiffrement à l'exécution, packing sophistiqué
+
+#### Analyse Dynamique avec Frida (Nécessite device Android)
+```bash
+poetry run androsleuth -a sample.apk --frida --duration 60
+```
+**Monitore** : API crypto, réseau, fichiers, SMS, localisation, chargement dynamique
+
+#### Analyse Exhaustive (Statique + Dynamique + Émulation)
+```bash
+poetry run androsleuth -a sample.apk -m deep --emulation --frida --duration 120 -o reports/full_analysis
+```
 
 ### Options Avancées
+
 ```bash
-# Générer uniquement un rapport JSON
-python src/androsleuth.py -a sample.apk -f json -o reports/my_report
+# Rapport JSON uniquement
+poetry run androsleuth -a sample.apk -f json -o reports/my_report
 
-# Analyse complète avec génération de rapports
-python src/androsleuth.py -a sample.apk -m deep -o reports/malware_analysis
+# Analyse complète avec rapport HTML
+poetry run androsleuth -a sample.apk -m deep -o reports/malware_analysis
 
-# Analyse avec émulation (détection auto-déchiffrement)
-python src/androsleuth.py -a sample.apk -m deep --emulation
+# Mode verbose pour debugging
+poetry run androsleuth -a sample.apk -m deep -v
 
-# Analyse dynamique avec Frida (nécessite un device)
-python src/androsleuth.py -a sample.apk --frida --duration 60
+# Configuration personnalisée
+poetry run androsleuth -a sample.apk --config my_config.yaml
 
-# Analyse exhaustive (statique + dynamique)
-python src/androsleuth.py -a sample.apk -m deep --emulation --frida -o reports/full_analysis
+# Aide complète
+poetry run androsleuth --help
+```
 
-# Analyse verbose avec tous les modules
-python src/androsleuth.py -a sample.apk -v --all-modules
+### Commandes Poetry Utiles
 
-# Utiliser une configuration personnalisée
-python src/androsleuth.py -a sample.apk --config my_config.yaml
+```bash
+# Activer l'environnement virtuel
+poetry shell
+
+# Installer une nouvelle dépendance
+poetry add requests
+
+# Installer dépendances de développement
+poetry add --group dev pytest
+
+# Mettre à jour les dépendances
+poetry update
+
+# Voir les dépendances installées
+poetry show
+
+# Exécuter les tests
+poetry run pytest
+
+# Lancer le formateur de code
+poetry run black src/
+
+# Vérifier le code avec flake8
+poetry run flake8 src/
+
+# Construire le package
+poetry build
+
+# Publier sur PyPI (après configuration)
+poetry publish
 ```
 
 ## 📁 Structure du Projet
@@ -184,8 +284,73 @@ Le fichier `config/config.yaml` permet de personnaliser :
 ## 🧪 Tests
 
 ```bash
+# Avec Poetry
+poetry run pytest tests/ -v
+
+# Avec coverage
+poetry run pytest tests/ -v --cov=src --cov-report=html
+
+# Avec pip/venv
 pytest tests/ -v
 ```
+
+## 🔒 Sécurité et Sandbox
+
+**⚠️ Important** : AndroSleuth effectue de l'**analyse statique** par défaut, ce qui est sûr. Cependant :
+
+### Analyse Statique (Sûr) ✅
+- Extraction et parsing du manifeste
+- Analyse des strings et bytecode
+- Désassemblage du code natif
+- Scan YARA
+- **Aucune exécution de code**
+
+### Émulation (Partiellement isolé) ⚠️
+- Utilise **Unicorn Engine** (émulateur CPU)
+- Exécute du code natif dans un environnement contrôlé
+- Limité à 10,000 instructions par fonction
+- Pas d'accès système réel
+- **Recommandation** : Analyser uniquement des APK de sources fiables
+
+### Analyse Dynamique avec Frida (Nécessite isolation) 🔴
+- **INSTALLE ET EXÉCUTE l'APK** sur un device Android
+- Peut exécuter du code malveillant réel
+- **OBLIGATOIRE** : Utiliser un environnement isolé :
+  - **Émulateur Android** (recommandé) : AVD, Genymotion
+  - **Device physique dédié** : Sans données personnelles, rooté
+  - **VM Android** : Android-x86 dans VirtualBox/VMware
+  - **Sandbox cloud** : Cuckoo, Joe Sandbox (pour malware avancé)
+
+### Recommandations de Sécurité 🛡️
+
+#### Pour Analyse Statique/Émulation :
+```bash
+# Pas de sandbox nécessaire
+poetry run androsleuth -a sample.apk -m deep --emulation
+```
+
+#### Pour Analyse Dynamique :
+```bash
+# 1. Utiliser un émulateur Android isolé
+emulator -avd test_device -no-snapshot
+
+# 2. Lancer frida-server sur l'émulateur
+adb shell "/data/local/tmp/frida-server &"
+
+# 3. Analyser avec timeout
+poetry run androsleuth -a sample.apk --frida --duration 60
+
+# 4. Restaurer snapshot après analyse
+```
+
+#### Configuration Sandbox Recommandée :
+- ✅ **Émulateur AVD** sans Google Services
+- ✅ **Réseau isolé** (pas d'accès Internet ou filtrage)
+- ✅ **Snapshots** pour restauration rapide
+- ✅ **Monitoring système** (tcpdump, strace)
+- ✅ **Pas de données sensibles** sur le device
+
+**Note** : L'analyse statique et l'émulation Unicorn sont suffisamment sûres pour analyser des APK suspects sans sandbox complet. Seule l'analyse dynamique avec Frida nécessite une isolation stricte.
 
 ## 🤝 Contribution
 
@@ -198,6 +363,7 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 
 ## 📝 TODO
 
+### Complété ✅
 - [x] Structure de base du projet
 - [x] Interface CLI
 - [x] Module d'ingestion APK
@@ -205,11 +371,29 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 - [x] Détecteur d'obfuscation
 - [x] Analyseur de code statique
 - [x] Intégration VirusTotal
-- [x] **Module d'analyse de shellcode**
+- [x] Module d'analyse de shellcode
 - [x] Système de scoring
-- [ ] Module d'émulation (Unicorn Engine)
-- [ ] Instrumentation Frida
-- [ ] Générateur de rapports HTML
+- [x] Module d'émulation (Unicorn Engine)
+- [x] Instrumentation Frida
+- [x] Générateur de rapports HTML/JSON
+- [x] Scanner YARA avec règles personnalisées
+- [x] Gestion des dépendances avec Poetry
+
+### En Cours 🚧
+- [ ] Tests unitaires complets (coverage > 80%)
+- [ ] CI/CD avec GitHub Actions
+- [ ] Documentation API complète
+- [ ] Interface Web (Flask/FastAPI)
+
+### Futur 🔮
+- [ ] Analyse de trafic réseau (mitmproxy)
+- [ ] Détection de techniques anti-analyse
+- [ ] Support multi-APK (comparaison)
+- [ ] Base de données des IOCs
+- [ ] Plugin pour IDA Pro / Ghidra
+- [ ] Intégration avec MISP
+- [ ] Containerisation Docker
+- [ ] API REST pour automatisation
 
 ## 📄 Licence
 

@@ -1,0 +1,143 @@
+[tool.poetry]
+name = "androsleuth"
+version = "1.0.0"
+description = "Advanced Android APK Forensic Analysis Tool with Static and Dynamic Analysis"
+authors = ["NatsuGwada <natsu@github.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/NatsuGwada/Shellcode_Forensic_Android"
+repository = "https://github.com/NatsuGwada/Shellcode_Forensic_Android"
+keywords = ["android", "apk", "malware", "forensics", "security", "analysis", "frida", "yara"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Topic :: Security",
+    "Topic :: Software Development :: Disassemblers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: POSIX :: Linux",
+]
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+# APK Analysis - Core
+androguard = "^3.4.0"
+
+# Disassembly & Binary Analysis
+capstone = {version = "^5.0.1", optional = true}
+keystone-engine = {version = "^0.9.2", optional = true}
+
+# Emulation
+unicorn = {version = "^2.0.1", optional = true}
+
+# Dynamic Instrumentation
+frida = {version = "^16.1.10", optional = true}
+frida-tools = {version = "^12.3.0", optional = true}
+
+# Malware Detection
+yara-python = "^4.3.1"
+
+# Cryptography
+pycryptodome = "^3.19.0"
+
+# Network Analysis
+mitmproxy = {version = "^10.1.5", optional = true}
+
+# CLI & Output
+colorama = "^0.4.6"
+rich = "^13.7.0"
+termcolor = "^2.4.0"
+requests = "^2.31.0"
+python-dotenv = "^1.0.0"
+
+# Configuration
+pyyaml = "^6.0.1"
+
+# Reporting
+jinja2 = "^3.1.2"
+
+# Testing
+pytest = {version = "^7.4.3", optional = true}
+pytest-cov = {version = "^4.1.0", optional = true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-cov = "^4.1.0"
+black = "^23.12.0"
+flake8 = "^6.1.0"
+mypy = "^1.7.1"
+isort = "^5.13.2"
+
+[tool.poetry.extras]
+# Installation profiles
+full = ["capstone", "keystone-engine", "unicorn", "frida", "frida-tools", "mitmproxy"]
+emulation = ["unicorn", "capstone", "keystone-engine"]
+dynamic = ["frida", "frida-tools"]
+network = ["mitmproxy"]
+dev = ["pytest", "pytest-cov"]
+
+[tool.poetry.scripts]
+androsleuth = "src.androsleuth:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+  | __pycache__
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=src --cov-report=html --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if FRIDA_AVAILABLE:",
+    "if UNICORN_AVAILABLE:",
+    "if CAPSTONE_AVAILABLE:",
+    "if YARA_AVAILABLE:",
+]
