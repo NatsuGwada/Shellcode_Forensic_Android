@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AndroSleuth Report - fdroid</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .score-card {
+            background: #28a745;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .score-card h2 {
+            font-size: 4em;
+            margin-bottom: 10px;
+        }
+        
+        .score-card p {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section h2::before {
+            content: "▸";
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .info-item strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .finding {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .finding.medium {
+            border-left-color: #ffc107;
+        }
+        
+        .finding.low {
+            border-left-color: #17a2b8;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .badge.danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .badge.warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .badge.info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .badge.success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 25px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .footer {
+            background: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .code {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 AndroSleuth Analysis Report</h1>
+            <p>Advanced APK Forensic Analysis</p>
+        </div>
+        
+        <div class="score-card">
+            <h2>25/100</h2>
+            <p>Risk Level: CLEAN</p>
+        </div>
+        
+        <div class="content">
+            
+        <div class="section">
+            <h2>📦 APK Information</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Package Name</strong>
+                    org.fdroid.fdroid
+                </div>
+                <div class="info-item">
+                    <strong>Version</strong>
+                    1.19.0-alpha2 (1019002)
+                </div>
+                <div class="info-item">
+                    <strong>Min SDK</strong>
+                    Android N/A
+                </div>
+                <div class="info-item">
+                    <strong>Target SDK</strong>
+                    Android N/A
+                </div>
+                <div class="info-item">
+                    <strong>MD5</strong>
+                    <div class="code" style="margin-top: 5px;">N/A</div>
+                </div>
+                <div class="info-item">
+                    <strong>SHA256</strong>
+                    <div class="code" style="margin-top: 5px;">N/A</div>
+                </div>
+            </div>
+        </div>
+        
+            
+        <div class="section">
+            <h2>📋 Manifest Analysis</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Total Permissions</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>Dangerous Permissions</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>Activities</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>Services</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>Receivers</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>Providers</strong>
+                    0
+                </div>
+            </div>
+            
+            <h3>🚨 Anomalies Detected</h3><div class="finding">count</div><div class="finding">issues</div>
+        </div>
+        
+            
+        <div class="section">
+            <h2>🔒 Obfuscation Analysis</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>ProGuard Detected</strong>
+                    ❌ No
+                </div>
+                <div class="info-item">
+                    <strong>Obfuscated Classes</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>Average Entropy</strong>
+                    0.00
+                </div>
+                <div class="info-item">
+                    <strong>High Entropy Files</strong>
+                    0
+                </div>
+            </div>
+            
+        </div>
+        
+            
+        <div class="section">
+            <h2>🔬 Static Analysis</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Total Strings</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>Suspicious Patterns</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>URLs Found</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>IP Addresses</strong>
+                    0
+                </div>
+            </div>
+            
+        </div>
+        
+            
+            
+        <div class="section">
+            <h2>💀 Shellcode Analysis</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Native Libraries</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>Dangerous Syscalls</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>Shellcode Patterns</strong>
+                    0
+                </div>
+                <div class="info-item">
+                    <strong>Threat Score</strong>
+                    0/100
+                </div>
+            </div>
+            
+            
+        </div>
+        
+            
+            
+            
+            
+        <div class="section">
+            <h2>📊 Analysis Summary</h2>
+            <div class="info-grid">
+                
+            <div class="info-item">
+                <strong>Manifest</strong>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%;">
+                        0/100
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-item">
+                <strong>Obfuscation</strong>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%;">
+                        0/100
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-item">
+                <strong>Static</strong>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%;">
+                        0/100
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-item">
+                <strong>Shellcode</strong>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%;">
+                        0/100
+                    </div>
+                </div>
+            </div>
+            
+            </div>
+        </div>
+        
+        </div>
+        
+        <div class="footer">
+            <p>Generated by <strong>AndroSleuth</strong> on 2025-11-23T15:49:12.878511</p>
+            <p><a href="https://github.com/NatsuGwada/Shellcode_Forensic_Android">GitHub Repository</a></p>
+        </div>
+    </div>
+</body>
+</html>
