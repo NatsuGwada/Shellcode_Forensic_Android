@@ -14,7 +14,7 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 
 ## 🚀 Fonctionnalités
 
-### ✅ Actuellement Implémenté (Phases 1-6)
+### ✅ Actuellement Implémenté (Phases 1-7)
 - ✅ **Structure du projet** : Architecture modulaire et extensible
 - ✅ **Interface CLI** : Commandes complètes avec argparse
 - ✅ **Configuration YAML** : Paramétrage flexible
@@ -27,6 +27,7 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 - ✅ **Analyse de shellcode** : Désassemblage ARM/x86, patterns malveillants
 - ✅ **Système de scoring** : Score de menace intelligent (0-100)
 - ✅ **Génération de Rapports** : HTML et JSON avec visualisations
+- ✅ **Scan YARA** : Détection de malware avec règles personnalisées
 
 ### 🔄 En Développement
 - **Analyse Comportementale (Dynamique)**
@@ -51,6 +52,8 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 - 🔍 **Patterns shellcode** (NOP sleds, egg hunters, etc.)
 - 🔍 **Désassemblage natif** ARM/ARM64/x86/x86-64
 - 🔍 **Réputation VirusTotal** (70+ moteurs AV)
+- 🔍 **13+ familles de malware** (trojans, spyware, ransomware, etc.)
+- 🔍 **Règles YARA personnalisées** pour détection comportementale
 
 ## 📋 Prérequis
 
@@ -139,11 +142,15 @@ Shellcode_Forensic_Android/
 │   │   ├── static_analyzer.py       # ✅ Analyse statique
 │   │   ├── shellcode_detector.py    # ✅ Analyse shellcode
 │   │   ├── virustotal_checker.py    # ✅ Vérification VirusTotal
+│   │   ├── yara_scanner.py          # ✅ Scan YARA
 │   │   └── report_generator.py      # ✅ Génération de rapports
 │   └── utils/                   # Utilitaires
 │       ├── logger.py                # Logger avec couleurs
 │       ├── entropy.py               # Calcul d'entropie
 │       └── helpers.py               # Fonctions utilitaires
+├── yara_rules/                  # Règles YARA personnalisées
+│   ├── android_malware.yar          # Détection de malware
+│   └── android_packers.yar          # Détection de packers
 ├── config/
 │   └── config.yaml              # Configuration principale
 ├── reports/                     # Rapports générés

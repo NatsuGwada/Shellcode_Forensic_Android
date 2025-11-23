@@ -147,6 +147,12 @@ Examples:
     )
     
     parser.add_argument(
+        '--skip-yara',
+        action='store_true',
+        help='Skip YARA malware scanning'
+    )
+    
+    parser.add_argument(
         '--all-modules',
         action='store_true',
         help='Enable all analysis modules (overrides skip flags)'
@@ -203,6 +209,7 @@ Examples:
     from src.modules.static_analyzer import StaticAnalyzer
     from src.modules.virustotal_checker import VirusTotalChecker
     from src.modules.shellcode_detector import ShellcodeDetector
+    from src.modules.yara_scanner import YaraScanner
     from src.modules.report_generator import ReportGenerator
     from src.utils.logger import setup_logger
     
@@ -304,6 +311,33 @@ Examples:
             if shellcode_summary['suspicious_libraries'] > 0:
                 console.print(f"[bold yellow]⚠ Found {shellcode_summary['suspicious_libraries']} suspicious native libraries[/bold yellow]")
         
+        # Phase 6: YARA Malware Scanning
+        if not args.skip_yara and args.mode in ['standard', 'deep']:
+            console.print("\n[bold cyan]Phase 6: YARA Malware Scanning[/bold cyan]")
+            yara_scanner = YaraScanner(extracted_files)
+            yara_results = yara_scanner.scan()
+            yara_summary = yara_scanner.get_summary()
+            
+            if yara_summary['yara_available'] and yara_summary['rules_loaded']:
+                console.print(f"[bold green]✓ YARA scan complete - Threat Score: {yara_summary['threat_score']}/100[/bold green]")
+                
+                if yara_summary['total_matches'] > 0:
+                    console.print(f"[bold yellow]⚠ YARA Detections: {yara_summary['total_matches']} matches in {yara_summary['matched_files']} files[/bold yellow]")
+                    
+                    # Show critical matches
+                    if yara_summary['critical_matches']:
+                        console.print(f"[bold red]  Critical:[/bold red] {len(yara_summary['critical_matches'])} matches")
+                        for match in yara_summary['critical_matches'][:3]:  # Show first 3
+                            console.print(f"    - {match['rule']}: {match['description']}")
+                    
+                    # Show high severity matches
+                    if yara_summary['high_matches']:
+                        console.print(f"[bold yellow]  High:[/bold yellow] {len(yara_summary['high_matches'])} matches")
+                else:
+                    console.print("[dim]  No malware patterns detected[/dim]")
+            else:
+                console.print("[dim]✓ YARA scan skipped (not available or no rules)[/dim]")
+        
         # Calculate overall threat score
         console.print("\n[bold cyan]═══ Analysis Summary ═══[/bold cyan]")
         
@@ -318,6 +352,9 @@ Examples:
             score_components.append(static_summary['threat_score'])
         if not args.skip_shellcode and args.mode in ['standard', 'deep']:
             score_components.append(shellcode_summary['threat_score'])
+        if not args.skip_yara and args.mode in ['standard', 'deep']:
+            if yara_summary.get('yara_available') and yara_summary.get('rules_loaded'):
+                score_components.append(yara_summary['threat_score'])
         
         # Add VirusTotal score if available
         vt_score = vt_checker.get_reputation_score()
@@ -379,6 +416,10 @@ Examples:
             
             if not args.skip_shellcode and args.mode in ['standard', 'deep']:
                 report_gen.add_shellcode_results(shellcode_results)
+            
+            if not args.skip_yara and args.mode in ['standard', 'deep']:
+                if yara_summary.get('yara_available') and yara_summary.get('rules_loaded'):
+                    report_gen.add_yara_results(yara_results)
             
             # Set overall score
             report_gen.set_overall_score(int(overall_score), risk_level)

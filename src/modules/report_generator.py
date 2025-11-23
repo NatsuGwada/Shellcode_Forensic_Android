@@ -40,6 +40,7 @@ class ReportGenerator:
             'static_analysis': {},
             'virustotal_analysis': {},
             'shellcode_analysis': {},
+            'yara_analysis': {},
             'overall_score': 0,
             'risk_level': 'UNKNOWN',
             'timestamp': datetime.now().isoformat()
@@ -82,6 +83,12 @@ class ReportGenerator:
         """Add shellcode detection results"""
         self.results['shellcode_analysis'] = results
         logger.debug("Added shellcode analysis to report")
+    
+    
+    def add_yara_results(self, results: Dict[str, Any]):
+        """Add YARA scan results"""
+        self.results['yara_analysis'] = results
+        logger.debug("Added YARA analysis to report")
     
     
     def set_overall_score(self, score: int, risk_level: str):
@@ -395,6 +402,7 @@ class ReportGenerator:
             {self._generate_static_analysis_section()}
             {self._generate_virustotal_section()}
             {self._generate_shellcode_section()}
+            {self._generate_yara_section()}
             {self._generate_summary_section()}
         </div>
         
@@ -672,6 +680,68 @@ class ReportGenerator:
         """
     
     
+    def _generate_yara_section(self) -> str:
+        """Generate YARA analysis section"""
+        yara = self.results.get('yara_analysis', {})
+        
+        if not yara or not yara.get('yara_available'):
+            return ""
+        
+        matches_html = ""
+        matches = yara.get('matches', [])
+        if matches:
+            matches_html = "<h3>🚨 YARA Detections</h3>"
+            for match in matches[:20]:  # Limit to 20
+                meta = match.get('meta', {})
+                severity = meta.get('severity', 'medium')
+                category = meta.get('category', 'unknown')
+                
+                severity_class = 'danger' if severity in ['critical', 'high'] else 'warning'
+                
+                matches_html += f'''<div class="finding {severity_class}">
+                    <strong>{match.get("rule", "Unknown")}</strong> 
+                    <span class="badge {severity_class}">{severity.upper()}</span>
+                    <span class="badge info">{category}</span>
+                    <br>
+                    <small>{meta.get("description", "No description")}</small>
+                    <br>
+                    <small>File: {match.get("file", "Unknown")}</small>
+                </div>'''
+        
+        categories_html = ""
+        categories = yara.get('categories', {})
+        if categories:
+            categories_html = "<h3>📊 Detection Categories</h3>"
+            for category, count in categories.items():
+                categories_html += f'<span class="badge warning">{category}: {count}</span>'
+        
+        return f"""
+        <div class="section">
+            <h2>🦠 YARA Malware Scanning</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Rules Loaded</strong>
+                    {yara.get('total_rules', 0)}
+                </div>
+                <div class="info-item">
+                    <strong>Total Matches</strong>
+                    {len(matches)}
+                </div>
+                <div class="info-item">
+                    <strong>Files Matched</strong>
+                    {yara.get('matched_files', 0)}
+                </div>
+                <div class="info-item">
+                    <strong>Threat Score</strong>
+                    {yara.get('threat_score', 0)}/100
+                </div>
+            </div>
+            {categories_html}
+            {matches_html}
+        </div>
+        """
+    
+    
     def _generate_summary_section(self) -> str:
         """Generate analysis summary section"""
         
@@ -687,6 +757,8 @@ class ReportGenerator:
             scores.append(('VirusTotal', self.results['virustotal_analysis'].get('score', 0)))
         if self.results.get('shellcode_analysis'):
             scores.append(('Shellcode', self.results['shellcode_analysis'].get('threat_score', 0)))
+        if self.results.get('yara_analysis') and self.results['yara_analysis'].get('yara_available'):
+            scores.append(('YARA', self.results['yara_analysis'].get('threat_score', 0)))
         
         scores_html = ""
         for module, score in scores:
