@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  androsleuth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: AndroSleuth
+    image: androsleuth:latest
+    
+    # Environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ANDROSLEUTH_ENV=docker
+    
+    # Volumes for persistent data
+    volumes:
+      # Mount samples directory (read-only for safety)
+      - ./samples:/opt/androsleuth/samples:ro
+      # Mount reports directory (read-write)
+      - ./reports:/opt/androsleuth/reports:rw
+      # Mount config (for VirusTotal API key if needed)
+      - ./config:/opt/androsleuth/config:ro
+    
+    # Resource limits for safety
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    
+    # Network isolation
+    networks:
+      - androsleuth_network
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Temporary file systems
+    tmpfs:
+      - /tmp:size=1G,mode=1777
+      - /var/tmp:size=1G,mode=1777
+    
+    # Override default command - keep container running
+    command: tail -f /dev/null
+    
+    # Restart policy
+    restart: unless-stopped
+
+  # Optional: Web interface for AndroSleuth (future)
+  # androsleuth-web:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.web
+  #   container_name: AndroSleuth-Web
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - androsleuth
+  #   networks:
+  #     - androsleuth_network
+
+networks:
+  androsleuth_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  androsleuth_reports:
+    driver: local
+  androsleuth_logs:
+    driver: local
