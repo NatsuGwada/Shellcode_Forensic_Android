@@ -1,0 +1,101 @@
+# AndroSleuth Configuration File
+
+# General Settings
+general:
+  app_name: "AndroSleuth"
+  version: "1.0.0"
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  temp_dir: "./temp_analysis"
+  reports_dir: "./reports"
+
+# Analysis Settings
+analysis:
+  # Static Analysis
+  static:
+    enabled: true
+    extract_strings: true
+    min_string_length: 4
+    analyze_manifest: true
+    analyze_dex: true
+    analyze_resources: true
+    analyze_native_libs: true
+  
+  # Dynamic Analysis
+  dynamic:
+    enabled: false  # Requires emulator/device
+    timeout: 300  # seconds
+    frida_scripts_dir: "./frida_scripts"
+  
+  # Shellcode Detection
+  shellcode:
+    enabled: true
+    scan_native_libs: true
+    emulation_enabled: true
+    emulation_timeout: 10  # seconds per binary
+
+# Threat Detection
+detection:
+  # Entropy threshold (0-8, higher = more random/encrypted)
+  entropy_threshold: 7.0
+  
+  # Suspicious permissions
+  dangerous_permissions:
+    - "android.permission.SEND_SMS"
+    - "android.permission.READ_SMS"
+    - "android.permission.RECEIVE_SMS"
+    - "android.permission.READ_CONTACTS"
+    - "android.permission.ACCESS_FINE_LOCATION"
+    - "android.permission.ACCESS_COARSE_LOCATION"
+    - "android.permission.CAMERA"
+    - "android.permission.RECORD_AUDIO"
+    - "android.permission.READ_CALL_LOG"
+    - "android.permission.WRITE_CALL_LOG"
+    - "android.permission.PROCESS_OUTGOING_CALLS"
+    - "android.permission.SYSTEM_ALERT_WINDOW"
+    - "android.permission.REQUEST_INSTALL_PACKAGES"
+    - "android.permission.READ_PHONE_STATE"
+    - "android.permission.CALL_PHONE"
+  
+  # Suspicious strings patterns
+  suspicious_patterns:
+    - "/system/bin/su"
+    - "/system/xbin/su"
+    - "chmod 777"
+    - "chmod +x"
+    - "busybox"
+    - "Runtime.getRuntime().exec"
+    - "java.lang.reflect"
+    - "Ljavax/crypto"
+    - "Cipher.getInstance"
+    - "loadLibrary"
+    - "DexClassLoader"
+    - "PathClassLoader"
+    - "URLClassLoader"
+
+# Scoring System
+scoring:
+  # Weights for different categories (total should be 100)
+  weights:
+    permissions: 20
+    manifest_anomalies: 15
+    code_obfuscation: 15
+    suspicious_strings: 10
+    native_code: 15
+    shellcode_detected: 25
+  
+  # Threat levels
+  threat_levels:
+    safe: 0-30
+    low: 31-50
+    medium: 51-70
+    high: 71-85
+    critical: 86-100
+
+# Reporting
+reporting:
+  formats:
+    - "json"
+    - "html"
+  include_screenshots: false
+  include_call_graph: true
+  verbose: true
