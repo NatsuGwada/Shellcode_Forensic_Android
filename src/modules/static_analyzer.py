@@ -395,6 +395,269 @@ class StaticAnalyzer:
             logger.error(f"Failed to detect reflection: {str(e)}")
             return {}
     
+    def detect_anti_analysis(self):
+        """
+        Detect anti-analysis and anti-debugging techniques
+        
+        Returns:
+            list: Anti-analysis techniques found
+        """
+        try:
+            logger.info("Detecting anti-analysis techniques...")
+            
+            techniques = []
+            all_strings = self.extract_all_strings()
+            
+            # Anti-debugging patterns
+            anti_debug_patterns = {
+                'android.os.Debug.isDebuggerConnected': 'Debugger detection',
+                'TracerPid': 'Tracer detection via /proc/self/status',
+                '/proc/self/status': 'Process status inspection',
+                'ptrace': 'Ptrace anti-debugging',
+                'JDWP': 'Java Debug Wire Protocol detection',
+                'BuildConfig.DEBUG': 'Debug build check',
+                'ApplicationInfo.FLAG_DEBUGGABLE': 'Debuggable flag check',
+            }
+            
+            # Emulator detection patterns
+            emulator_patterns = {
+                'Build.FINGERPRINT': 'Build fingerprint check',
+                'generic': 'Generic device check',
+                'goldfish': 'Goldfish emulator check',
+                'sdk_phone': 'SDK phone emulator check',
+                'Emulator': 'Emulator string detection',
+                'vbox': 'VirtualBox detection',
+                'qemu': 'QEMU emulator detection',
+                'genymotion': 'Genymotion emulator detection',
+            }
+            
+            # Root detection patterns
+            root_patterns = {
+                '/system/app/Superuser.apk': 'Superuser APK check',
+                '/system/xbin/su': 'su binary check',
+                'com.noshufou.android.su': 'SuperSU check',
+                'eu.chainfire.supersu': 'SuperSU package check',
+                'com.topjohnwu.magisk': 'Magisk detection',
+                'test-keys': 'Test keys detection (rooted)',
+            }
+            
+            # Check all patterns
+            all_patterns = {
+                **anti_debug_patterns,
+                **emulator_patterns,
+                **root_patterns
+            }
+            
+            for pattern, description in all_patterns.items():
+                for string in all_strings:
+                    if pattern.lower() in string.lower():
+                        technique_type = (
+                            'ANTI_DEBUG' if pattern in anti_debug_patterns else
+                            'EMULATOR_DETECTION' if pattern in emulator_patterns else
+                            'ROOT_DETECTION'
+                        )
+                        
+                        techniques.append({
+                            'type': technique_type,
+                            'pattern': pattern,
+                            'description': description,
+                            'severity': 'HIGH'
+                        })
+                        break
+            
+            # Remove duplicates
+            unique_techniques = []
+            seen = set()
+            for tech in techniques:
+                key = (tech['type'], tech['pattern'])
+                if key not in seen:
+                    seen.add(key)
+                    unique_techniques.append(tech)
+            
+            self.results['anti_analysis'] = unique_techniques
+            
+            if unique_techniques:
+                logger.warning(f"⚠ Detected {len(unique_techniques)} anti-analysis techniques")
+            else:
+                logger.info("✓ No anti-analysis techniques detected")
+            
+            return unique_techniques
+            
+        except Exception as e:
+            logger.error(f"Failed to detect anti-analysis: {e}")
+            return []
+    
+    def detect_packing_obfuscation(self):
+        """
+        Detect packing and advanced obfuscation techniques
+        
+        Returns:
+            dict: Packing/obfuscation analysis
+        """
+        try:
+            logger.info("Detecting packing and obfuscation...")
+            
+            indicators = {
+                'is_packed': False,
+                'packer_names': [],
+                'obfuscation_score': 0,
+                'indicators': []
+            }
+            
+            all_strings = self.extract_all_strings()
+            
+            # Known packer signatures
+            packers = {
+                'jiagu': 'Qihoo 360 Jiagu',
+                'bangcle': 'Bangcle/SecNeo',
+                'ijiami': 'Ijiami',
+                'apkprotect': 'APKProtect',
+                'dexprotector': 'DexProtector',
+                'allatori': 'Allatori Obfuscator',
+                'proguard': 'ProGuard',
+                'dexguard': 'DexGuard',
+            }
+            
+            for packer_sig, packer_name in packers.items():
+                for string in all_strings:
+                    if packer_sig.lower() in string.lower():
+                        indicators['packer_names'].append(packer_name)
+                        indicators['is_packed'] = True
+                        indicators['indicators'].append({
+                            'type': 'PACKER_SIGNATURE',
+                            'value': packer_name,
+                            'evidence': string[:100]
+                        })
+                        break
+            
+            # Check for encrypted/encoded strings (high entropy in string literals)
+            base64_pattern = re.compile(r'^[A-Za-z0-9+/]{40,}={0,2}$')
+            hex_pattern = re.compile(r'^[0-9a-fA-F]{40,}$')
+            
+            encoded_strings = 0
+            for string in all_strings[:500]:  # Check first 500 strings
+                if len(string) > 20:
+                    if base64_pattern.match(string):
+                        encoded_strings += 1
+                    elif hex_pattern.match(string):
+                        encoded_strings += 1
+            
+            if encoded_strings > 10:
+                indicators['indicators'].append({
+                    'type': 'ENCODED_STRINGS',
+                    'value': f'{encoded_strings} encoded strings found',
+                    'evidence': 'High number of Base64/Hex strings'
+                })
+                indicators['obfuscation_score'] += 20
+            
+            # Check DEX file count (multiple DEX = possible packing)
+            dex_count = len(self.extracted_files.get('dex_files', []))
+            if dex_count > 2:
+                indicators['indicators'].append({
+                    'type': 'MULTIPLE_DEX',
+                    'value': f'{dex_count} DEX files',
+                    'evidence': 'Multidex or packed application'
+                })
+                indicators['obfuscation_score'] += 15
+            
+            # Native library checks
+            native_libs = self.extracted_files.get('native_libs', [])
+            if len(native_libs) > 10:
+                indicators['indicators'].append({
+                    'type': 'EXCESSIVE_NATIVE_LIBS',
+                    'value': f'{len(native_libs)} native libraries',
+                    'evidence': 'High native library count (possible packer)'
+                })
+                indicators['obfuscation_score'] += 10
+            
+            # Calculate final score
+            if indicators['is_packed']:
+                indicators['obfuscation_score'] += 30
+            
+            indicators['obfuscation_score'] = min(indicators['obfuscation_score'], 100)
+            
+            self.results['packing_obfuscation'] = indicators
+            
+            if indicators['is_packed']:
+                logger.warning(f"⚠ App appears to be packed: {', '.join(indicators['packer_names'])}")
+            
+            return indicators
+            
+        except Exception as e:
+            logger.error(f"Failed to detect packing: {e}")
+            return {}
+    
+    def detect_data_exfiltration(self):
+        """
+        Detect potential data exfiltration patterns
+        
+        Returns:
+            list: Data exfiltration indicators
+        """
+        try:
+            logger.info("Detecting data exfiltration patterns...")
+            
+            exfil_patterns = []
+            all_strings = self.extract_all_strings()
+            
+            # Suspicious data collection patterns
+            data_collection = {
+                'getDeviceId': 'Device ID collection',
+                'getSubscriberId': 'Subscriber ID (IMSI) collection',
+                'getSimSerialNumber': 'SIM serial collection',
+                'getLine1Number': 'Phone number collection',
+                'getLastKnownLocation': 'Location data collection',
+                'getAllByName': 'DNS resolution (C&C)',
+                'ContentResolver.query': 'Content provider queries',
+                'getInstalledPackages': 'Installed apps enumeration',
+                'getAccounts': 'Account information access',
+                'getCellLocation': 'Cell tower location',
+            }
+            
+            for pattern, description in data_collection.items():
+                count = sum(1 for s in all_strings if pattern in s)
+                if count > 0:
+                    exfil_patterns.append({
+                        'pattern': pattern,
+                        'description': description,
+                        'occurrences': count,
+                        'severity': 'HIGH' if count > 5 else 'MEDIUM'
+                    })
+            
+            # Network transmission indicators
+            network_transmission = [
+                'HttpURLConnection',
+                'HttpClient',
+                'OkHttp',
+                'Socket',
+                'URLConnection'
+            ]
+            
+            has_network = any(
+                any(net_api in s for s in all_strings)
+                for net_api in network_transmission
+            )
+            
+            # If has data collection + network = potential exfiltration
+            if exfil_patterns and has_network:
+                exfil_patterns.append({
+                    'pattern': 'DATA_COLLECTION_WITH_NETWORK',
+                    'description': 'Collects sensitive data + has network capability',
+                    'occurrences': 1,
+                    'severity': 'CRITICAL'
+                })
+            
+            self.results['data_exfiltration'] = exfil_patterns
+            
+            if exfil_patterns:
+                logger.warning(f"⚠ Detected {len(exfil_patterns)} data exfiltration indicators")
+            
+            return exfil_patterns
+            
+        except Exception as e:
+            logger.error(f"Failed to detect exfiltration: {e}")
+            return []
+    
     def calculate_threat_score(self):
         """
         Calculate threat score based on static analysis
@@ -404,18 +667,38 @@ class StaticAnalyzer:
         """
         score = 0
         
-        # Suspicious strings (max 20 points)
+        # Suspicious strings (max 15 points)
         suspicious_strings = self.results.get('suspicious_strings', [])
-        score += min(len(suspicious_strings) * 0.5, 20)
+        score += min(len(suspicious_strings) * 0.5, 15)
         
-        # Dynamic code loading (max 25 points)
+        # Dynamic code loading (max 20 points)
         dynamic_loading = self.results.get('dynamic_code_loading', [])
-        score += min(len(dynamic_loading) * 5, 25)
+        score += min(len(dynamic_loading) * 5, 20)
         
-        # Native code usage (max 15 points)
+        # Native code usage (max 10 points)
         native_usage = self.results.get('native_code_usage', {})
         native_count = native_usage.get('native_libs_count', 0)
-        score += min(native_count * 3, 15)
+        score += min(native_count * 2, 10)
+        
+        # Packing/obfuscation (max 20 points)
+        packing = self.results.get('packing_obfuscation', {})
+        obf_score = packing.get('obfuscation_score', 0)
+        score += min(obf_score / 5, 20)
+        
+        # Anti-analysis techniques (max 15 points)
+        anti_analysis = self.results.get('anti_analysis', [])
+        score += min(len(anti_analysis) * 5, 15)
+        
+        # Data exfiltration (max 20 points)
+        exfil = self.results.get('data_exfiltration', [])
+        for pattern in exfil:
+            if pattern['severity'] == 'CRITICAL':
+                score += 8
+            elif pattern['severity'] == 'HIGH':
+                score += 4
+            else:
+                score += 2
+        score = min(score, 100)
         
         # Category-based scoring
         category_counter = Counter()
@@ -424,11 +707,11 @@ class StaticAnalyzer:
         
         # Extra points for dangerous categories
         if category_counter.get('ROOT_ACCESS', 0) > 0:
-            score += 15
+            score += 10
         if category_counter.get('SHELL_COMMAND', 0) > 0:
-            score += 10
+            score += 8
         if category_counter.get('DYNAMIC_LOADING', 0) > 0:
-            score += 10
+            score += 7
         
         score = min(score, 100)
         self.results['threat_score'] = score
@@ -453,6 +736,9 @@ class StaticAnalyzer:
         self.detect_crypto_usage()
         self.detect_network_activity()
         self.detect_reflection_api()
+        self.detect_anti_analysis()
+        self.detect_packing_obfuscation()
+        self.detect_data_exfiltration()
         
         # Calculate threat score
         threat_score = self.calculate_threat_score()
@@ -476,5 +762,8 @@ class StaticAnalyzer:
             'dynamic_loading_count': len(self.results.get('dynamic_code_loading', [])),
             'native_libs_count': self.results.get('native_code_usage', {}).get('native_libs_count', 0),
             'crypto_apis_count': len(self.results.get('crypto_usage', [])),
-            'network_apis_count': len(self.results.get('network_activity', []))
+            'network_apis_count': len(self.results.get('network_activity', [])),
+            'anti_analysis_count': len(self.results.get('anti_analysis', [])),
+            'is_packed': self.results.get('packing_obfuscation', {}).get('is_packed', False),
+            'data_exfiltration_count': len(self.results.get('data_exfiltration', []))
         }

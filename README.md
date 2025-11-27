@@ -14,18 +14,20 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 
 ## 🚀 Fonctionnalités
 
-### ✅ Actuellement Implémenté (Phases 1-9 - COMPLET!)
+### ✅ Actuellement Implémenté (Phases 1-10 - COMPLET!)
 - ✅ **Structure du projet** : Architecture modulaire et extensible
 - ✅ **Interface CLI** : Commandes complètes avec argparse
 - ✅ **Configuration YAML** : Paramétrage flexible
-- ✅ **Modes d'analyse** : Quick / Standard / Deep
+- ✅ **Modes d'analyse** : Quick / Standard / Deep / Complete
 - ✅ **Intégration VirusTotal** : Vérification de réputation via API
 - ✅ **Ingestion APK** : Extraction et validation complète
-- ✅ **Analyse du Manifeste** : Permissions, receivers, anomalies
-- ✅ **Détection d'obfuscation** : ProGuard, packers, entropie
-- ✅ **Analyse statique** : Strings, APIs, chargement dynamique
+- ✅ **Analyse du Manifeste** : Permissions avancées avec matrice de risque
+- ✅ **Analyse des Composants** : Activities, Services, Receivers, Providers, Deep Links
+- ✅ **Détection d'obfuscation** : ProGuard, packers (8+), entropie
+- ✅ **Analyse statique avancée** : Anti-analyse, exfiltration de données
+- ✅ **Décompilation JADX** : Extraction code source Java complet
 - ✅ **Analyse de shellcode** : Désassemblage ARM/x86, patterns malveillants
-- ✅ **Système de scoring** : Score de menace intelligent (0-100)
+- ✅ **Système de scoring** : Score de menace multi-dimensionnel (0-100)
 - ✅ **Génération de Rapports** : HTML, JSON et **PDF** avec visualisations
 - ✅ **Scan YARA** : Détection de malware avec règles personnalisées
 - ✅ **Émulation** : Unicorn Engine pour code auto-déchiffrant
@@ -33,21 +35,37 @@ Sur internet, il y a plein d'applications Android disponibles sur des plateforme
 - ✅ **Docker** : Container isolé et sécurisé pour analyse de malware
 - ✅ **Poetry** : Gestion moderne des dépendances
 
-### 🎉 Projet Production-Ready!
-AndroSleuth est maintenant un outil d'analyse APK complet et validé avec :
-- **Analyse Statique Complète** : 8 modules validés (Manifeste, obfuscation, strings, shellcode, YARA)
+### 🎉 Projet Production-Ready v1.1!
+AndroSleuth est maintenant un outil d'analyse APK avancé avec :
+- **Analyse Statique Avancée** : 11 modules validés (Manifeste amélioré, JADX, Composants, Anti-analyse)
+- **Décompilation Java** : JADX integration pour analyse de code source
+- **Matrice de Permissions** : 12 groupes fonctionnels avec scoring de risque
+- **Analyse de Composants** : Deep links, custom permissions, exported components
+- **Détection Anti-Analyse** : Debug, émulateur, root (15+ techniques)
+- **Détection d'Obfuscation** : 8 packers commerciaux identifiés
+- **Secrets Hardcodés** : API keys, tokens, passwords, clés privées
+- **Exfiltration de Données** : Patterns de collecte + transmission réseau
 - **Analyse Dynamique** : Émulation Unicorn + Instrumentation Frida (prêt à 95%)
 - **Rapports Professionnels** : HTML, JSON, PDF avec code couleur et visualisations
 - **Environnement Isolé** : Container Docker sécurisé pour analyse de malware
-- **Gestion Moderne** : Poetry pour dépendances reproductibles
-- **Performance Optimale** : 8-18 secondes selon le mode d'analyse
-- **13 Règles YARA** : Détection de malware sans faux positifs
+- **Performance Optimale** : 8-25 secondes selon le mode d'analyse (avec JADX)
 
 ### ✅ Détections Avancées Disponibles
-- 🔍 **15+ permissions dangereuses** (SMS, localisation, caméra, etc.)
-- 🔍 **10+ packers commerciaux** (UPX, Bangcle, Tencent, etc.)
-- 🔍 **20+ patterns suspects** (shell, root, crypto, etc.)
-- 🔍 **Combinaisons de permissions** suspectes
+- 🔍 **15+ permissions dangereuses** avec analyse matricielle
+- 🔍 **12 groupes de permissions** (Location, Camera, SMS, etc.)
+- 🔍 **Detection de sur-privilèges** (spyware, SMS trojan patterns)
+- 🔍 **Permissions Runtime vs Install-time** (Android 6.0+)
+- 🔍 **Composants exportés** (activities, services, receivers, providers)
+- 🔍 **Deep Links & URL Schemes** personnalisés
+- 🔍 **Intent Filters** avec évaluation de risque
+- 🔍 **Custom Permissions** définies par l'app
+- 🔍 **10+ packers commerciaux** (Jiagu, Bangcle, DexGuard, etc.)
+- 🔍 **Anti-debugging** (15+ techniques : ptrace, TracerPid, JDWP, etc.)
+- 🔍 **Emulator detection** (7+ patterns : QEMU, VirtualBox, Genymotion)
+- 🔍 **Root detection** (Magisk, SuperSU, test-keys)
+- 🔍 **Secrets hardcodés** (API keys, AWS keys, passwords, tokens, Firebase)
+- 🔍 **APIs dangereuses** (Runtime.exec, DexClassLoader, WebView JS interface)
+- 🔍 **Data exfiltration** (IMEI, IMSI, location + network)
 - 🔍 **Chargement dynamique** de code (DexClassLoader, etc.)
 - 🔍 **Fichiers haute entropie** (chiffrés/compressés)
 - 🔍 **Syscalls dangereux** (execve, ptrace, etc.)
@@ -66,6 +84,7 @@ AndroSleuth est maintenant un outil d'analyse APK complet et validé avec :
 
 - Python 3.8+
 - Poetry (gestionnaire de dépendances moderne) ou pip
+- **JADX** (décompilateur Java pour analyse avancée)
 - Outils optionnels pour analyse avancée :
   - Radare2 / Ghidra (analyse binaire avancée)
   - Frida (pour analyse dynamique en temps réel)
@@ -73,6 +92,25 @@ AndroSleuth est maintenant un outil d'analyse APK complet et validé avec :
   - frida-server sur le device Android (pour instrumentation)
 
 ## 🛠️ Installation
+
+### Installation de JADX (Recommandé)
+
+JADX est requis pour l'analyse statique avancée (décompilation Java, détection de secrets, APIs dangereuses).
+
+```bash
+# Installation automatique avec script
+./install_jadx.sh
+
+# Ou installation manuelle
+# Ubuntu/Debian
+sudo apt install jadx
+
+# macOS
+brew install jadx
+
+# Vérifier l'installation
+jadx --version
+```
 
 ### Option 1 : Installation avec Poetry (Recommandé) 🚀
 
@@ -458,16 +496,26 @@ Cet outil est destiné à des fins éducatives et de recherche en sécurité. Ut
 - **[FEATURES.md](FEATURES.md)** - Liste complète des fonctionnalités
 - **[PDF_FEATURE.md](PDF_FEATURE.md)** - Documentation des rapports PDF
 - **[FRIDA_GUIDE.md](FRIDA_GUIDE.md)** - Guide complet Frida avec 3 solutions
+- **[ADVANCED_ANALYSIS.md](ADVANCED_ANALYSIS.md)** - 🆕 **Analyse statique avancée avec JADX**
 - **[SESSION_REPORT.md](SESSION_REPORT.md)** - Rapport de développement
 - **[VALIDATION_REPORT.md](VALIDATION_REPORT.md)** - Résultats de validation
 
 ## 🎯 Statut du Projet
 
-**Version**: 1.0.0  
+**Version**: 1.1.0  
 **Statut**: ✅ Production-Ready (Static Analysis) | 🔄 Frida 95%  
-**Modules validés**: 8/8 (100%)  
+**Modules validés**: 11/11 (100%)  
 **Tests réussis**: 4/4 modes d'analyse  
-**Performance**: 8-18 secondes selon mode  
+**Performance**: 8-25 secondes (avec JADX) | 8-18 secondes (sans JADX)  
 **YARA**: 13 règles, 0 erreur  
+**JADX**: ✅ Décompilation Java + détection avancée  
+
+**Nouveautés v1.1.0** (27 Nov 2025):
+- ✨ **JADX Integration** - Décompilation Java complète
+- ✨ **Matrice de Permissions** - 12 groupes fonctionnels avec scoring
+- ✨ **Component Analyzer** - Deep links, custom permissions, exported components
+- ✨ **Anti-Analysis Detection** - Debug, emulator, root (15+ techniques)
+- ✨ **Packing Detection** - 8 packers commerciaux identifiés
+- ✨ **Data Exfiltration** - Détection de patterns de collecte + transmission
 
 ---

@@ -41,6 +41,8 @@ numpy>=1.26.2
 matplotlib>=3.8.2
 jinja2>=3.1.2
 plotly>=5.18.0
+reportlab>=4.0.7
+pillow>=10.1.0
 
 # Configuration
 pyyaml>=6.0.1
@@ -51,3 +53,6 @@ sqlalchemy>=2.0.23
 # Testing
 pytest>=7.4.3
 pytest-cov>=4.1.0
+
+# Note: JADX is installed separately via install_jadx.sh script
+# JADX is a Java-based tool and requires Java 11+ runtime

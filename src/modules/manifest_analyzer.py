@@ -48,13 +48,13 @@ class ManifestAnalyzer:
     
     def analyze_permissions(self):
         """
-        Analyze permissions declared in manifest
+        Analyze permissions declared in manifest with advanced categorization
         
         Returns:
             dict: Permission analysis results
         """
         try:
-            logger.info("Analyzing permissions...")
+            logger.info("Analyzing permissions with advanced categorization...")
             
             permissions = self.apk.get_permissions()
             dangerous_perms = self.config.get('detection', {}).get('dangerous_permissions', [])
@@ -64,19 +64,62 @@ class ManifestAnalyzer:
                 'all_permissions': permissions,
                 'dangerous_permissions': [],
                 'normal_permissions': [],
-                'risk_level': 'LOW'
+                'permission_groups': {
+                    'LOCATION': [],
+                    'CAMERA': [],
+                    'MICROPHONE': [],
+                    'CONTACTS': [],
+                    'PHONE': [],
+                    'SMS': [],
+                    'STORAGE': [],
+                    'CALENDAR': [],
+                    'SENSORS': [],
+                    'NETWORK': [],
+                    'SYSTEM': [],
+                    'OTHER': []
+                },
+                'runtime_permissions': [],
+                'install_time_permissions': [],
+                'over_privileged': False,
+                'risk_level': 'LOW',
+                'permission_matrix': []
             }
             
-            # Categorize permissions
+            # Categorize permissions by group
             for perm in permissions:
+                # Check if dangerous
                 if perm in dangerous_perms:
                     permission_analysis['dangerous_permissions'].append(perm)
                 else:
                     permission_analysis['normal_permissions'].append(perm)
+                
+                # Group permissions
+                group = self._categorize_permission(perm)
+                permission_analysis['permission_groups'][group].append(perm)
+                
+                # Runtime vs install-time (Android 6.0+)
+                if self._is_runtime_permission(perm):
+                    permission_analysis['runtime_permissions'].append(perm)
+                else:
+                    permission_analysis['install_time_permissions'].append(perm)
+                
+                # Build permission matrix
+                perm_detail = {
+                    'name': perm,
+                    'group': group,
+                    'protection_level': self._get_protection_level(perm),
+                    'is_dangerous': perm in dangerous_perms,
+                    'is_runtime': self._is_runtime_permission(perm),
+                    'risk_score': self._calculate_permission_risk(perm)
+                }
+                permission_analysis['permission_matrix'].append(perm_detail)
+            
+            # Check for over-privileged app
+            permission_analysis['over_privileged'] = self._detect_over_privileged(permission_analysis)
             
             # Determine risk level
             dangerous_count = len(permission_analysis['dangerous_permissions'])
-            if dangerous_count >= 10:
+            if dangerous_count >= 10 or permission_analysis['over_privileged']:
                 permission_analysis['risk_level'] = 'CRITICAL'
             elif dangerous_count >= 7:
                 permission_analysis['risk_level'] = 'HIGH'
@@ -87,7 +130,10 @@ class ManifestAnalyzer:
             else:
                 permission_analysis['risk_level'] = 'SAFE'
             
+            # Log group summary
+            active_groups = [g for g, perms in permission_analysis['permission_groups'].items() if perms]
             logger.info(f"✓ Found {dangerous_count} dangerous permissions - Risk: {permission_analysis['risk_level']}")
+            logger.info(f"✓ Permission groups: {', '.join(active_groups)}")
             
             self.results['permissions'] = permission_analysis
             return permission_analysis
@@ -95,6 +141,146 @@ class ManifestAnalyzer:
         except Exception as e:
             logger.error(f"Failed to analyze permissions: {str(e)}")
             return {}
+    
+    def _categorize_permission(self, permission: str) -> str:
+        """Categorize permission into functional groups"""
+        perm_lower = permission.lower()
+        
+        if 'location' in perm_lower or 'gps' in perm_lower:
+            return 'LOCATION'
+        elif 'camera' in perm_lower:
+            return 'CAMERA'
+        elif 'microphone' in perm_lower or 'record_audio' in perm_lower:
+            return 'MICROPHONE'
+        elif 'contact' in perm_lower or 'call_log' in perm_lower:
+            return 'CONTACTS'
+        elif 'phone' in perm_lower or 'call' in perm_lower:
+            return 'PHONE'
+        elif 'sms' in perm_lower or 'mms' in perm_lower:
+            return 'SMS'
+        elif 'storage' in perm_lower or 'read_external' in perm_lower or 'write_external' in perm_lower:
+            return 'STORAGE'
+        elif 'calendar' in perm_lower:
+            return 'CALENDAR'
+        elif 'sensor' in perm_lower or 'body_sensor' in perm_lower:
+            return 'SENSORS'
+        elif 'internet' in perm_lower or 'network' in perm_lower or 'wifi' in perm_lower:
+            return 'NETWORK'
+        elif 'system' in perm_lower or 'device' in perm_lower or 'admin' in perm_lower:
+            return 'SYSTEM'
+        else:
+            return 'OTHER'
+    
+    def _is_runtime_permission(self, permission: str) -> bool:
+        """Check if permission requires runtime grant (Android 6.0+)"""
+        runtime_permissions = [
+            'android.permission.READ_CALENDAR',
+            'android.permission.WRITE_CALENDAR',
+            'android.permission.CAMERA',
+            'android.permission.READ_CONTACTS',
+            'android.permission.WRITE_CONTACTS',
+            'android.permission.GET_ACCOUNTS',
+            'android.permission.ACCESS_FINE_LOCATION',
+            'android.permission.ACCESS_COARSE_LOCATION',
+            'android.permission.RECORD_AUDIO',
+            'android.permission.READ_PHONE_STATE',
+            'android.permission.CALL_PHONE',
+            'android.permission.READ_CALL_LOG',
+            'android.permission.WRITE_CALL_LOG',
+            'android.permission.ADD_VOICEMAIL',
+            'android.permission.USE_SIP',
+            'android.permission.PROCESS_OUTGOING_CALLS',
+            'android.permission.BODY_SENSORS',
+            'android.permission.SEND_SMS',
+            'android.permission.RECEIVE_SMS',
+            'android.permission.READ_SMS',
+            'android.permission.RECEIVE_WAP_PUSH',
+            'android.permission.RECEIVE_MMS',
+            'android.permission.READ_EXTERNAL_STORAGE',
+            'android.permission.WRITE_EXTERNAL_STORAGE'
+        ]
+        return permission in runtime_permissions
+    
+    def _get_protection_level(self, permission: str) -> str:
+        """Get Android protection level for permission"""
+        # Simplified categorization
+        dangerous = [
+            'READ_CALENDAR', 'WRITE_CALENDAR', 'CAMERA', 'READ_CONTACTS', 
+            'WRITE_CONTACTS', 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION',
+            'RECORD_AUDIO', 'READ_PHONE_STATE', 'CALL_PHONE', 'READ_SMS',
+            'SEND_SMS', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE'
+        ]
+        
+        signature = [
+            'BIND_DEVICE_ADMIN', 'BIND_INPUT_METHOD', 'BIND_ACCESSIBILITY_SERVICE',
+            'BIND_NOTIFICATION_LISTENER_SERVICE', 'BIND_VPN_SERVICE'
+        ]
+        
+        perm_name = permission.split('.')[-1]
+        
+        if perm_name in dangerous:
+            return 'dangerous'
+        elif perm_name in signature:
+            return 'signature'
+        else:
+            return 'normal'
+    
+    def _calculate_permission_risk(self, permission: str) -> int:
+        """Calculate risk score for individual permission (0-10)"""
+        critical_perms = [
+            'SEND_SMS', 'RECEIVE_SMS', 'READ_SMS', 'RECEIVE_WAP_PUSH',
+            'CALL_PHONE', 'PROCESS_OUTGOING_CALLS', 'CAMERA',
+            'RECORD_AUDIO', 'ACCESS_FINE_LOCATION'
+        ]
+        
+        high_perms = [
+            'READ_CONTACTS', 'WRITE_CONTACTS', 'READ_CALL_LOG',
+            'WRITE_CALL_LOG', 'READ_PHONE_STATE', 'ACCESS_COARSE_LOCATION',
+            'WRITE_EXTERNAL_STORAGE', 'READ_EXTERNAL_STORAGE'
+        ]
+        
+        perm_name = permission.split('.')[-1]
+        
+        if perm_name in critical_perms:
+            return 10
+        elif perm_name in high_perms:
+            return 7
+        elif self._is_runtime_permission(permission):
+            return 5
+        else:
+            return 2
+    
+    def _detect_over_privileged(self, perm_analysis: dict) -> bool:
+        """
+        Detect if app is over-privileged
+        
+        Args:
+            perm_analysis: Permission analysis dict
+            
+        Returns:
+            bool: True if over-privileged
+        """
+        # Check for suspicious permission combinations
+        groups = perm_analysis['permission_groups']
+        
+        # Has access to SMS + Location + Camera = spyware pattern
+        if groups['SMS'] and groups['LOCATION'] and groups['CAMERA']:
+            return True
+        
+        # Has access to Phone + SMS + Contacts = SMS trojan pattern
+        if groups['PHONE'] and groups['SMS'] and groups['CONTACTS']:
+            return True
+        
+        # Too many permission groups (>6)
+        active_groups = sum(1 for perms in groups.values() if perms)
+        if active_groups > 6:
+            return True
+        
+        # More than 15 dangerous permissions
+        if len(perm_analysis['dangerous_permissions']) > 15:
+            return True
+        
+        return False
     
     def analyze_receivers(self):
         """
