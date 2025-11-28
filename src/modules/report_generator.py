@@ -112,6 +112,62 @@ class ReportGenerator:
         logger.info(f"Overall score: {score}/100 - Risk: {risk_level}")
     
     
+    def _normalize_results(self):
+        """
+        Normalize results structure for consistent JSON output
+        Ensures all required fields are present with expected structure
+        """
+        # Normalize manifest analysis structure
+        if 'manifest_analysis' in self.results:
+            manifest = self.results['manifest_analysis']
+            
+            # Ensure permissions is a dict with required fields
+            if 'permissions' in manifest:
+                perms = manifest['permissions']
+                # If permissions is already a dict with structure, keep it
+                if isinstance(perms, dict):
+                    # Ensure all required fields exist
+                    if 'all_permissions' not in perms:
+                        perms['all_permissions'] = perms.get('permissions', [])
+                    if 'dangerous_permissions' not in perms:
+                        perms['dangerous_permissions'] = []
+                    if 'permission_matrix' not in perms:
+                        perms['permission_matrix'] = []
+                # If permissions is a list (old format), convert to new structure
+                elif isinstance(perms, list):
+                    manifest['permissions'] = {
+                        'all_permissions': perms,
+                        'dangerous_permissions': [],
+                        'permission_matrix': [],
+                        'total_count': len(perms)
+                    }
+            
+            # Ensure components are structured
+            for comp_type in ['activities', 'services', 'receivers', 'providers']:
+                if comp_type in manifest:
+                    comps = manifest[comp_type]
+                    # If it's a list, keep it as is (already correct)
+                    # If it's a dict with items/total_count, keep it
+                    if not isinstance(comps, (list, dict)):
+                        manifest[comp_type] = []
+        
+        # Ensure apk_info has required fields
+        if 'apk_info' in self.results:
+            apk_info = self.results['apk_info']
+            required_fields = ['package_name', 'app_name', 'version_name', 'version_code']
+            for field in required_fields:
+                if field not in apk_info:
+                    apk_info[field] = 'N/A'
+            
+            # Ensure hashes exist
+            if 'hashes' not in apk_info:
+                apk_info['hashes'] = {'md5': 'N/A', 'sha1': 'N/A', 'sha256': 'N/A'}
+            
+            # Ensure signers is a list
+            if 'signers' not in apk_info:
+                apk_info['signers'] = []
+    
+    
     def generate_json_report(self) -> str:
         """
         Generate JSON report
@@ -123,6 +179,9 @@ class ReportGenerator:
         json_path = self.output_dir / json_filename
         
         try:
+            # Normalize results structure before serialization
+            self._normalize_results()
+            
             with open(json_path, 'w', encoding='utf-8') as f:
                 json.dump(self.results, f, indent=2, ensure_ascii=False)
             
@@ -476,31 +535,90 @@ class ReportGenerator:
     def _generate_manifest_section(self) -> str:
         """Generate manifest analysis section"""
         manifest = self.results.get('manifest_analysis', {})
-        
+
         if not manifest:
             return ""
-        
-        permissions_html = ""
-        dangerous_perms = manifest.get('dangerous_permissions', [])
-        if dangerous_perms:
-            permissions_html = "<h3>⚠️ Dangerous Permissions</h3>"
-            for perm in dangerous_perms:
-                permissions_html += f'<span class="badge danger">{perm}</span>'
-        
+
+        # Permissions: support multiple shapes (permission_analysis or direct lists)
+        perm_analysis = manifest.get('permissions') if isinstance(manifest.get('permissions'), dict) else manifest
+        all_perms = perm_analysis.get('all_permissions', []) or perm_analysis.get('permissions', [])
+        dangerous_perms = perm_analysis.get('dangerous_permissions', [])
+        permission_matrix = perm_analysis.get('permission_matrix', [])
+
+        # Components
+        activities = manifest.get('activities') or []
+        services = manifest.get('services') or []
+        receivers = manifest.get('receivers') or []
+        providers = manifest.get('providers') or []
+
+        # Anomalies
+        anomalies = manifest.get('anomalies', {}).get('issues', []) if isinstance(manifest.get('anomalies'), dict) else manifest.get('anomalies', [])
+
+        # Permissions HTML list
+        perms_list_html = ""
+        if all_perms:
+            perms_list_html = "<h3>🔐 All Declared Permissions</h3><div style='margin-bottom:10px;'>"
+            for perm in all_perms:
+                cls = 'danger' if perm in dangerous_perms else 'info'
+                perms_list_html += f'<span class="badge {cls}">{perm}</span>'
+            perms_list_html += "</div>"
+
+        # Permission matrix table
+        perm_matrix_html = ""
+        if permission_matrix:
+            perm_matrix_html = "<h3>📋 Permission Matrix</h3>"
+            perm_matrix_html += "<table><thead><tr><th>Permission</th><th>Group</th><th>Protection</th><th>Runtime</th><th>Risk</th></tr></thead><tbody>"
+            for p in permission_matrix:
+                perm_matrix_html += f"<tr><td>{p.get('name')}</td><td>{p.get('group')}</td><td>{p.get('protection_level')}</td><td>{'Yes' if p.get('is_runtime') else 'No'}</td><td>{p.get('risk_score')}</td></tr>"
+            perm_matrix_html += "</tbody></table>"
+
+        # Components summary grid
+        def count_or_zero(v):
+            try:
+                return v.get('total_count') if isinstance(v, dict) and 'total_count' in v else (len(v) if isinstance(v, list) else 0)
+            except:
+                return 0
+
+        activities_count = count_or_zero(activities)
+        services_count = count_or_zero(services)
+        receivers_count = count_or_zero(receivers)
+        providers_count = count_or_zero(providers)
+
+        # Component lists (show first 50 for brevity)
+        def render_component_list(items, title):
+            if not items:
+                return ''
+            html = f"<h4>{title}</h4><ul style='list-style: none; padding: 0;'>"
+            for comp in (items if isinstance(items, list) else items.get('items', []))[:50]:
+                name = comp.get('name') if isinstance(comp, dict) else str(comp)
+                exported = comp.get('exported') if isinstance(comp, dict) else ''
+                html += f"<li style='padding:6px 8px; margin:4px 0; background:#fff; border-radius:6px;'><strong>{name}</strong> <small style='color:#666;'>" + (f"- exported" if exported else "") + "</small></li>"
+            html += "</ul>"
+            return html
+
+        activities_html = render_component_list(activities, 'Activities')
+        services_html = render_component_list(services, 'Services')
+        receivers_html = render_component_list(receivers, 'Broadcast Receivers')
+        providers_html = render_component_list(providers, 'Content Providers')
+
         anomalies_html = ""
-        anomalies = manifest.get('anomalies', [])
         if anomalies:
             anomalies_html = "<h3>🚨 Anomalies Detected</h3>"
-            for anomaly in anomalies:
-                anomalies_html += f'<div class="finding">{anomaly}</div>'
-        
+            for anomaly in anomalies[:20]:
+                # If anomaly is dict, pretty-print key fields
+                if isinstance(anomaly, dict):
+                    desc = anomaly.get('description') or anomaly.get('reason') or str(anomaly)
+                else:
+                    desc = str(anomaly)
+                anomalies_html += f'<div class="finding">{desc}</div>'
+
         return f"""
         <div class="section">
             <h2>📋 Manifest Analysis</h2>
             <div class="info-grid">
                 <div class="info-item">
                     <strong>Total Permissions</strong>
-                    {manifest.get('total_permissions', 0)}
+                    {len(all_perms)}
                 </div>
                 <div class="info-item">
                     <strong>Dangerous Permissions</strong>
@@ -508,22 +626,27 @@ class ReportGenerator:
                 </div>
                 <div class="info-item">
                     <strong>Activities</strong>
-                    {manifest.get('total_activities', 0)}
+                    {activities_count}
                 </div>
                 <div class="info-item">
                     <strong>Services</strong>
-                    {manifest.get('total_services', 0)}
+                    {services_count}
                 </div>
                 <div class="info-item">
                     <strong>Receivers</strong>
-                    {manifest.get('total_receivers', 0)}
+                    {receivers_count}
                 </div>
                 <div class="info-item">
                     <strong>Providers</strong>
-                    {manifest.get('total_providers', 0)}
+                    {providers_count}
                 </div>
             </div>
-            {permissions_html}
+            {perms_list_html}
+            {perm_matrix_html}
+            {activities_html}
+            {services_html}
+            {receivers_html}
+            {providers_html}
             {anomalies_html}
         </div>
         """

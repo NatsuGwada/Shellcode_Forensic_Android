@@ -229,8 +229,11 @@ class PDFReportGenerator:
         # Manifest findings
         if 'manifest_analysis' in results:
             manifest = results['manifest_analysis']
-            findings.append(f"• Permissions: {manifest.get('total_permissions', 0)} total, "
-                          f"{manifest.get('dangerous_permissions_count', 0)} dangerous")
+            # manifest may contain a 'permissions' dict
+            perm_analysis = manifest.get('permissions') if isinstance(manifest.get('permissions'), dict) else manifest
+            all_perms = perm_analysis.get('all_permissions', []) or perm_analysis.get('permissions', [])
+            dangerous = perm_analysis.get('dangerous_permissions', [])
+            findings.append(f"• Permissions: {len(all_perms)} total, {len(dangerous)} dangerous")
         
         # Obfuscation findings
         if 'obfuscation_analysis' in results:
@@ -301,6 +304,17 @@ class PDFReportGenerator:
             <b>SHA256:</b> {hashes.get('sha256', 'N/A')}
             """
             self.story.append(Paragraph(hash_text, self.styles['Normal']))
+            self.story.append(Spacer(1, 0.2 * inch))
+
+        # Certificates / Signers
+        if 'signers' in apk_info:
+            self.story.append(Paragraph("Signers / Certificates", self.styles['CustomHeading2']))
+            signers = apk_info.get('signers', [])
+            for s in signers:
+                cn = s.get('subject_cn', s.get('cn', 'Unknown'))
+                issuer = s.get('issuer_cn', s.get('issuer', 'Unknown'))
+                self.story.append(Paragraph(f"• {cn} (Issuer: {issuer})", self.styles['Normal']))
+            self.story.append(Spacer(1, 0.2 * inch))
         
         self.story.append(PageBreak())
     
@@ -308,14 +322,16 @@ class PDFReportGenerator:
         """Add permissions analysis with chart"""
         self.story.append(Paragraph("Permissions Analysis", self.styles['CustomHeading1']))
         self.story.append(Spacer(1, 0.2 * inch))
-        
-        permissions = manifest.get('permissions', [])
-        dangerous = manifest.get('dangerous_permissions', [])
+        # Normalize manifest permissions structure
+        perm_analysis = manifest.get('permissions') if isinstance(manifest.get('permissions'), dict) else manifest
+        permissions = perm_analysis.get('all_permissions', []) or perm_analysis.get('permissions', [])
+        dangerous = perm_analysis.get('dangerous_permissions', [])
+        permission_matrix = perm_analysis.get('permission_matrix', [])
         
         # Summary
         summary_text = f"""
-        Total Permissions: <b>{len(permissions)}</b><br/>
-        Dangerous Permissions: <b>{len(dangerous)}</b>
+    Total Permissions: <b>{len(permissions)}</b><br/>
+    Dangerous Permissions: <b>{len(dangerous)}</b>
         """
         self.story.append(Paragraph(summary_text, self.styles['Normal']))
         self.story.append(Spacer(1, 0.2 * inch))
@@ -349,9 +365,82 @@ class PDFReportGenerator:
         # Dangerous permissions list
         if dangerous:
             self.story.append(Paragraph("Dangerous Permissions Detected:", self.styles['CustomHeading2']))
-            for perm in dangerous[:10]:  # Limit to 10
+            for perm in dangerous[:50]:  # Show up to 50
                 perm_name = perm if isinstance(perm, str) else perm.get('name', 'Unknown')
                 self.story.append(Paragraph(f"• {perm_name}", self.styles['Normal']))
+
+        # Permission matrix table
+        if permission_matrix:
+            self.story.append(Paragraph('Permission Matrix', self.styles['CustomHeading2']))
+            table_data = [['Permission', 'Group', 'Protection', 'Runtime', 'Risk']]
+            for p in permission_matrix:
+                table_data.append([
+                    p.get('name', ''),
+                    p.get('group', ''),
+                    p.get('protection_level', ''),
+                    'Yes' if p.get('is_runtime') else 'No',
+                    str(p.get('risk_score', ''))
+                ])
+            tbl = Table(table_data, colWidths=[2.5*inch, 1.2*inch, 1.2*inch, 0.8*inch, 0.6*inch])
+            tbl.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), self._hex_to_rgb('#3498db')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ]))
+            self.story.append(tbl)
+            self.story.append(Spacer(1, 0.2 * inch))
+
+        # Components lists (if present)
+        comp_section_added = False
+        if 'activities' in manifest or 'services' in manifest or 'receivers' in manifest or 'providers' in manifest:
+            self.story.append(Paragraph('Components', self.styles['CustomHeading2']))
+            comp_section_added = True
+            # Activities
+            activities = manifest.get('activities') or []
+            if activities:
+                self.story.append(Paragraph('Activities', self.styles['CustomHeading2']))
+                if isinstance(activities, dict) and 'total_count' in activities:
+                    items = activities.get('items', [])
+                else:
+                    items = activities
+                for a in items[:50]:
+                    name = a.get('name') if isinstance(a, dict) else str(a)
+                    exported = a.get('exported') if isinstance(a, dict) else None
+                    self.story.append(Paragraph(f'• {name}' + (f' - exported' if exported else ''), self.styles['Normal']))
+
+            # Services
+            services = manifest.get('services') or []
+            if services:
+                self.story.append(Paragraph('Services', self.styles['CustomHeading2']))
+                items = services if isinstance(services, list) else services.get('items', [])
+                for s in items[:50]:
+                    name = s.get('name') if isinstance(s, dict) else str(s)
+                    exported = s.get('exported') if isinstance(s, dict) else None
+                    self.story.append(Paragraph(f'• {name}' + (f' - exported' if exported else ''), self.styles['Normal']))
+
+            # Receivers
+            receivers = manifest.get('receivers') or []
+            if receivers:
+                self.story.append(Paragraph('Broadcast Receivers', self.styles['CustomHeading2']))
+                items = receivers if isinstance(receivers, list) else receivers.get('items', [])
+                for r in items[:50]:
+                    name = r.get('name') if isinstance(r, dict) else str(r)
+                    exported = r.get('exported') if isinstance(r, dict) else None
+                    self.story.append(Paragraph(f'• {name}' + (f' - exported' if exported else ''), self.styles['Normal']))
+
+            # Providers
+            providers = manifest.get('providers') or []
+            if providers:
+                self.story.append(Paragraph('Content Providers', self.styles['CustomHeading2']))
+                items = providers if isinstance(providers, list) else providers.get('items', [])
+                for p in items[:50]:
+                    name = p.get('name') if isinstance(p, dict) else str(p)
+                    auth = p.get('authorities') if isinstance(p, dict) else None
+                    self.story.append(Paragraph(f'• {name}' + (f' - authorities: {auth}' if auth else ''), self.styles['Normal']))
+
+        if comp_section_added:
+            self.story.append(Spacer(1, 0.2 * inch))
         
         self.story.append(PageBreak())
     
