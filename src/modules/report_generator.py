@@ -159,9 +159,14 @@ class ReportGenerator:
                 if field not in apk_info:
                     apk_info[field] = 'N/A'
             
-            # Ensure hashes exist
+            # Ensure hashes exist and are valid
             if 'hashes' not in apk_info:
                 apk_info['hashes'] = {'md5': 'N/A', 'sha1': 'N/A', 'sha256': 'N/A'}
+            else:
+                # Ensure each hash value is not None or empty
+                for hash_type in ['md5', 'sha1', 'sha256']:
+                    if hash_type not in apk_info['hashes'] or not apk_info['hashes'][hash_type]:
+                        apk_info['hashes'][hash_type] = 'N/A'
             
             # Ensure signers is a list
             if 'signers' not in apk_info:

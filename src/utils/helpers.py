@@ -38,11 +38,12 @@ def calculate_file_hashes(file_path):
             'sha256': sha256_hash.hexdigest()
         }
     except Exception as e:
+        # Return N/A instead of None for consistency
         return {
             'error': str(e),
-            'md5': None,
-            'sha1': None,
-            'sha256': None
+            'md5': 'N/A',
+            'sha1': 'N/A',
+            'sha256': 'N/A'
         }
 
 

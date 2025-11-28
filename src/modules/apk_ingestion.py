@@ -84,36 +84,94 @@ class APKIngestion:
                 logger.error("APK not loaded. Run validate_apk() first.")
                 return {}
             
-            # Calculate file hashes
+            logger.debug(f"Starting metadata extraction for: {self.apk_path}")
+            
+            # Calculate file hashes (always succeeds or returns N/A)
             hashes = calculate_file_hashes(self.apk_path)
+            logger.debug(f"Calculated hashes: {hashes}")
             
             # Get file size
             file_size = get_file_size(self.apk_path)
+            logger.debug(f"File size: {file_size}")
             
-            # Extract APK information
+            # Initialize metadata with basic file info
             self.metadata = {
                 'file_name': os.path.basename(self.apk_path),
                 'file_path': os.path.abspath(self.apk_path),
                 'file_size': file_size,
                 'file_size_formatted': format_file_size(file_size),
                 'hashes': hashes,
-                'package_name': self.apk.get_package(),
-                'app_name': self.apk.get_app_name(),
-                'version_name': self.apk.get_androidversion_name(),
-                'version_code': self.apk.get_androidversion_code(),
-                'min_sdk_version': self.apk.get_min_sdk_version(),
-                'target_sdk_version': self.apk.get_target_sdk_version(),
-                'max_sdk_version': self.apk.get_max_sdk_version(),
-                'is_signed': self.apk.is_signed(),
-                'is_signed_v1': self.apk.is_signed_v1(),
-                'is_signed_v2': self.apk.is_signed_v2(),
-                'is_signed_v3': self.apk.is_signed_v3(),
             }
+            
+            # Extract APK information with individual error handling
+            # Package name (usually reliable)
+            try:
+                self.metadata['package_name'] = self.apk.get_package()
+            except Exception as e:
+                logger.warning(f"Failed to extract package name: {e}")
+                self.metadata['package_name'] = 'N/A'
+            
+            # App name (may fail with malformed resources.arsc)
+            try:
+                self.metadata['app_name'] = self.apk.get_app_name()
+            except Exception as e:
+                logger.warning(f"Failed to extract app name: {e}")
+                self.metadata['app_name'] = 'N/A'
+            
+            # Version info
+            try:
+                self.metadata['version_name'] = self.apk.get_androidversion_name()
+            except Exception as e:
+                logger.warning(f"Failed to extract version name: {e}")
+                self.metadata['version_name'] = 'N/A'
+            
+            try:
+                self.metadata['version_code'] = self.apk.get_androidversion_code()
+            except Exception as e:
+                logger.warning(f"Failed to extract version code: {e}")
+                self.metadata['version_code'] = 'N/A'
+            
+            # SDK versions
+            try:
+                self.metadata['min_sdk_version'] = self.apk.get_min_sdk_version()
+            except Exception as e:
+                logger.warning(f"Failed to extract min SDK: {e}")
+                self.metadata['min_sdk_version'] = 'N/A'
+            
+            try:
+                self.metadata['target_sdk_version'] = self.apk.get_target_sdk_version()
+            except Exception as e:
+                logger.warning(f"Failed to extract target SDK: {e}")
+                self.metadata['target_sdk_version'] = 'N/A'
+            
+            try:
+                self.metadata['max_sdk_version'] = self.apk.get_max_sdk_version()
+            except Exception as e:
+                logger.warning(f"Failed to extract max SDK: {e}")
+                self.metadata['max_sdk_version'] = 'N/A'
+            
+            # Signature info
+            try:
+                self.metadata['is_signed'] = self.apk.is_signed()
+                self.metadata['is_signed_v1'] = self.apk.is_signed_v1()
+                self.metadata['is_signed_v2'] = self.apk.is_signed_v2()
+                self.metadata['is_signed_v3'] = self.apk.is_signed_v3()
+            except Exception as e:
+                logger.warning(f"Failed to extract signature info: {e}")
+                self.metadata['is_signed'] = False
+                self.metadata['is_signed_v1'] = False
+                self.metadata['is_signed_v2'] = False
+                self.metadata['is_signed_v3'] = False
+            
+            logger.debug(f"Extracted package_name: {self.metadata.get('package_name', 'N/A')}")
+            logger.debug(f"Extracted app_name: {self.metadata.get('app_name', 'N/A')}")
+            logger.debug(f"Extracted version: {self.metadata.get('version_name', 'N/A')}")
             
             # Extract certificate information
             try:
                 signers = []
                 certs = self.apk.get_certificates()
+                logger.debug(f"Found {len(certs)} certificate(s)")
                 for cert in certs:
                     # Parse certificate subject and issuer
                     subject_dict = {}
@@ -156,6 +214,7 @@ class APKIngestion:
                             'not_after': cert.not_valid_after.isoformat() if hasattr(cert, 'not_valid_after') else 'N/A'
                         }
                         signers.append(signer_info)
+                        logger.debug(f"Extracted certificate: {signer_info['subject_cn']}")
                     except Exception as cert_parse_error:
                         logger.debug(f"Error parsing certificate details: {cert_parse_error}")
                         # Fallback to basic info
@@ -167,15 +226,26 @@ class APKIngestion:
                 
                 self.metadata['signers'] = signers
             except Exception as cert_error:
-                logger.debug(f"Could not extract certificate info: {cert_error}")
+                logger.warning(f"Could not extract certificate info: {cert_error}")
                 self.metadata['signers'] = []
             
-            logger.info(f"✓ Extracted metadata for package: {self.metadata['package_name']}")
+            logger.info(f"✓ Extracted metadata for package: {self.metadata.get('package_name', 'Unknown')}")
+            logger.debug(f"Full metadata: {self.metadata}")
             return self.metadata
         
         except Exception as e:
             logger.error(f"Failed to extract metadata: {str(e)}")
-            return {}
+            import traceback
+            logger.error(traceback.format_exc())
+            # Return at least basic file info if available
+            return {
+                'file_name': os.path.basename(self.apk_path) if self.apk_path else 'unknown.apk',
+                'hashes': calculate_file_hashes(self.apk_path) if self.apk_path else {'md5': 'N/A', 'sha1': 'N/A', 'sha256': 'N/A'},
+                'package_name': 'N/A',
+                'app_name': 'N/A',
+                'version_name': 'N/A',
+                'version_code': 'N/A',
+            }
     
     def extract_files(self):
         """
