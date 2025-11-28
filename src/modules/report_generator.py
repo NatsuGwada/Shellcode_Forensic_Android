@@ -499,35 +499,80 @@ class ReportGenerator:
         if not info:
             return ""
         
+        # Extract hashes from nested structure
+        hashes = info.get('hashes', {})
+        md5 = hashes.get('md5', 'N/A')
+        sha1 = hashes.get('sha1', 'N/A')
+        sha256 = hashes.get('sha256', 'N/A')
+        
+        # Get signers information
+        signers = info.get('signers', [])
+        signers_html = ""
+        if signers:
+            signers_html = "<div class='info-item' style='grid-column: 1 / -1;'><strong>📜 Certificates</strong><ul style='margin: 5px 0 0 20px;'>"
+            for signer in signers:
+                cn = signer.get('subject_cn', signer.get('cn', 'Unknown'))
+                issuer = signer.get('issuer_cn', signer.get('issuer', 'Unknown'))
+                serial = signer.get('serial', 'N/A')
+                signers_html += f"<li><strong>{cn}</strong> (Issuer: {issuer}, Serial: {serial})</li>"
+            signers_html += "</ul></div>"
+        
         return f"""
         <div class="section">
             <h2>📦 APK Information</h2>
             <div class="info-grid">
                 <div class="info-item">
-                    <strong>Package Name</strong>
+                    <strong>📁 File Name</strong>
+                    {info.get('file_name', info.get('app_name', 'N/A'))}
+                </div>
+                <div class="info-item">
+                    <strong>📦 Package Name</strong>
                     {info.get('package_name', 'N/A')}
                 </div>
                 <div class="info-item">
-                    <strong>Version</strong>
+                    <strong>🏷️ App Name</strong>
+                    {info.get('app_name', 'N/A')}
+                </div>
+                <div class="info-item">
+                    <strong>🔢 Version</strong>
                     {info.get('version_name', 'N/A')} ({info.get('version_code', 'N/A')})
                 </div>
                 <div class="info-item">
-                    <strong>Min SDK</strong>
-                    Android {info.get('min_sdk', 'N/A')}
+                    <strong>📏 File Size</strong>
+                    {info.get('file_size_formatted', 'N/A')}
                 </div>
                 <div class="info-item">
-                    <strong>Target SDK</strong>
-                    Android {info.get('target_sdk', 'N/A')}
+                    <strong>🔧 Min SDK</strong>
+                    API {info.get('min_sdk_version', 'N/A')}
                 </div>
                 <div class="info-item">
-                    <strong>MD5</strong>
-                    <div class="code" style="margin-top: 5px;">{info.get('md5', 'N/A')}</div>
+                    <strong>🎯 Target SDK</strong>
+                    API {info.get('target_sdk_version', 'N/A')}
                 </div>
                 <div class="info-item">
-                    <strong>SHA256</strong>
-                    <div class="code" style="margin-top: 5px;">{info.get('sha256', 'N/A')}</div>
+                    <strong>🔐 Signed</strong>
+                    {'✅ Yes' if info.get('is_signed') else '❌ No'} 
+                    {('(v1)' if info.get('is_signed_v1') else '') + ('(v2)' if info.get('is_signed_v2') else '') + ('(v3)' if info.get('is_signed_v3') else '')}
                 </div>
             </div>
+            
+            <h3 style="margin-top: 20px; color: #667eea;">🔑 File Hashes</h3>
+            <div class="info-grid">
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <strong>MD5</strong>
+                    <div class="code" style="margin-top: 5px; font-size: 0.85em;">{md5}</div>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <strong>SHA-1</strong>
+                    <div class="code" style="margin-top: 5px; font-size: 0.85em;">{sha1}</div>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <strong>SHA-256</strong>
+                    <div class="code" style="margin-top: 5px; font-size: 0.85em;">{sha256}</div>
+                </div>
+            </div>
+            
+            {signers_html}
         </div>
         """
     

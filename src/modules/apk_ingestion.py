@@ -110,6 +110,66 @@ class APKIngestion:
                 'is_signed_v3': self.apk.is_signed_v3(),
             }
             
+            # Extract certificate information
+            try:
+                signers = []
+                certs = self.apk.get_certificates()
+                for cert in certs:
+                    # Parse certificate subject and issuer
+                    subject_dict = {}
+                    issuer_dict = {}
+                    
+                    # Get subject and issuer from certificate
+                    try:
+                        subject = cert.subject
+                        issuer = cert.issuer
+                        
+                        # Extract CN (Common Name) from subject
+                        for attr in subject:
+                            for rdn in attr:
+                                if rdn.oid._name == 'commonName':
+                                    subject_dict['cn'] = rdn.value
+                                elif rdn.oid._name == 'organizationName':
+                                    subject_dict['org'] = rdn.value
+                                elif rdn.oid._name == 'countryName':
+                                    subject_dict['country'] = rdn.value
+                        
+                        # Extract CN from issuer
+                        for attr in issuer:
+                            for rdn in attr:
+                                if rdn.oid._name == 'commonName':
+                                    issuer_dict['cn'] = rdn.value
+                                elif rdn.oid._name == 'organizationName':
+                                    issuer_dict['org'] = rdn.value
+                        
+                        # Get serial number
+                        serial = hex(cert.serial_number)[2:].upper()
+                        
+                        signer_info = {
+                            'subject_cn': subject_dict.get('cn', 'Unknown'),
+                            'subject_org': subject_dict.get('org', 'N/A'),
+                            'subject_country': subject_dict.get('country', 'N/A'),
+                            'issuer_cn': issuer_dict.get('cn', 'Self-signed'),
+                            'issuer_org': issuer_dict.get('org', 'N/A'),
+                            'serial': serial,
+                            'not_before': cert.not_valid_before.isoformat() if hasattr(cert, 'not_valid_before') else 'N/A',
+                            'not_after': cert.not_valid_after.isoformat() if hasattr(cert, 'not_valid_after') else 'N/A'
+                        }
+                        signers.append(signer_info)
+                    except Exception as cert_parse_error:
+                        logger.debug(f"Error parsing certificate details: {cert_parse_error}")
+                        # Fallback to basic info
+                        signers.append({
+                            'subject_cn': 'Unknown',
+                            'issuer_cn': 'Unknown',
+                            'serial': 'N/A'
+                        })
+                
+                self.metadata['signers'] = signers
+            except Exception as cert_error:
+                logger.debug(f"Could not extract certificate info: {cert_error}")
+                self.metadata['signers'] = []
+            
             logger.info(f"✓ Extracted metadata for package: {self.metadata['package_name']}")
             return self.metadata
         
