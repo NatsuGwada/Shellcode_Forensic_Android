@@ -492,11 +492,17 @@ Cet outil est destiné à des fins éducatives et de recherche en sécurité. Ut
 
 ## 📚 Documentation Complète
 
+### Guides d'utilisation
 - **[QUICKSTART.md](QUICKSTART.md)** - Guide de démarrage rapide
-- **[FEATURES.md](FEATURES.md)** - Liste complète des fonctionnalités
-- **[PDF_FEATURE.md](PDF_FEATURE.md)** - Documentation des rapports PDF
+- **[PHYSICAL_DEVICE_GUIDE.md](PHYSICAL_DEVICE_GUIDE.md)** - 🆕 **Configuration appareil Android physique + Analyse Deep**
 - **[FRIDA_GUIDE.md](FRIDA_GUIDE.md)** - Guide complet Frida avec 3 solutions
-- **[ADVANCED_ANALYSIS.md](ADVANCED_ANALYSIS.md)** - 🆕 **Analyse statique avancée avec JADX**
+
+### Documentation technique
+- **[FEATURES.md](FEATURES.md)** - Liste complète des fonctionnalités
+- **[ADVANCED_ANALYSIS.md](ADVANCED_ANALYSIS.md)** - Analyse statique avancée avec JADX
+- **[PDF_FEATURE.md](PDF_FEATURE.md)** - Documentation des rapports PDF
+
+### Rapports de développement
 - **[SESSION_REPORT.md](SESSION_REPORT.md)** - Rapport de développement
 - **[VALIDATION_REPORT.md](VALIDATION_REPORT.md)** - Résultats de validation
 
